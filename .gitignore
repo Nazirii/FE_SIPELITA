@@ -1,0 +1,18 @@
+# Frontend (Next.js)
+/fe-sipelita/node_modules
+/fe-sipelita/.next
+/fe-sipelita/out
+/fe-sipelita/.env.local
+
+# Backend (Laravel)
+/be-sipelita/vendor
+/be-sipelita/node_modules
+/be-sipelita/.env
+/be-sipelita/storage/framework/
+-be-sipelita/storage/logs/
+-be-sipelita/public/storage
+
+# Sistem umum
+.env
+.DS_Store
+Thumbs.db
