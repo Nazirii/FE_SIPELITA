@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 export interface SlhdData {
   id: number;
   provinsi: string;
