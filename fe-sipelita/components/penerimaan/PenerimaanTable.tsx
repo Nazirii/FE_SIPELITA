@@ -1,4 +1,7 @@
 'use client';
+
+import { useState } from 'react';
+
 export interface SlhdData {
   id: number;
   provinsi: string;
@@ -41,15 +44,6 @@ export default function PenerimaanTable({
   onVerify, 
   isProcessing 
 }: PenerimaanTableProps) {
-  // HAPUS: selectedDocument dan selectedMainTable karena tidak dipakai
-  // const [selectedDocument, setSelectedDocument] = useState<{
-  //   type: 'buku1' | 'buku2';
-  //   item: SlhdData;
-  // } | null>(null);
-
-  // const [selectedMainTable, setSelectedMainTable] = useState<{
-  //   item: SlhdData;
-  // } | null>(null);
   
   const checkIsVerified = (val: boolean | number): boolean => {
     return val === true || val === 1;
