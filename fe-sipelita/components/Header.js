@@ -108,19 +108,19 @@ export default function Header() {
     navLinks = [
         { name: 'Beranda', href: baseHref },
         { 
-          name: 'Panel Penilaian', 
-          href: `${baseHref}/penilaian`, 
-          dropdown: [
-            { name: 'Hasil Penilaian', href: `${baseHref}/penilaian/hasil-penilaian` },
-            { name: 'Tabel rekap kab/kota', href: `${baseHref}/penilaian/tabel-rekap` },
-          ]
-        },
-        { 
           name: 'Panel Pengiriman Data', 
           href: `${baseHref}/pengiriman-data`, 
           dropdown: [
             { name: 'Unggah Dokumen', href: `${baseHref}/pengiriman-data`, icon: DocumentIcon },
             { name: 'Unduh Template Dokumen', href: `${baseHref}/pengiriman-data/template`, icon: DocumentIcon }, 
+          ]
+        },
+        { 
+          name: 'Panel Penilaian', 
+          href: `${baseHref}/penilaian`, 
+          dropdown: [
+            { name: 'Hasil Penilaian', href: `${baseHref}/penilaian/hasil-penilaian` },
+            { name: 'Tabel rekap kab/kota', href: `${baseHref}/penilaian/tabel-rekap` },
           ]
         },
         { name: 'Perangkat Analisis', href: `${baseHref}/perangkat-analisis` },

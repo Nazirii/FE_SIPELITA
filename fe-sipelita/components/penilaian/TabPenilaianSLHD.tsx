@@ -1,11 +1,25 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { FaFileExcel, FaCloudUploadAlt } from 'react-icons/fa';
 import { MdCheckBox, MdCheckBoxOutlineBlank } from 'react-icons/md';
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/Pagination'; // Pastikan path ini sesuai
 
-const generateSLHDData = () => {
+// --- INTERFACES ---
+interface SLHDData {
+  id: number;
+  name: string;
+  buku1: boolean;
+  buku2: boolean;
+  tabel: boolean;
+  nilaiBukuI: number;
+  nilaiTabel: number;
+  nilaiTotal: string;
+}
+
+// --- DATA DUMMY ---
+const generateSLHDData = (): SLHDData[] => {
   return Array.from({ length: 45 }, (_, i) => {
     const nilaiBukuI = 70 + Math.floor(Math.random() * 25);
     const nilaiTabel = 70 + Math.floor(Math.random() * 25);
@@ -26,17 +40,20 @@ const generateSLHDData = () => {
 
 const slhdData = generateSLHDData();
 
+// --- KOMPONEN UTAMA ---
 export default function TabPenilaianSLHD() {
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageNilai, setCurrentPageNilai] = useState(1);
   const itemsPerPage = 10;
 
+  // Pagination Logic untuk Tabel Administrasi
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return slhdData.slice(startIndex, endIndex);
   }, [currentPage]);
 
+  // Pagination Logic untuk Tabel Nilai
   const paginatedDataNilai = useMemo(() => {
     const startIndex = (currentPageNilai - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -47,11 +64,13 @@ export default function TabPenilaianSLHD() {
 
   return (
     <div className="space-y-8">
+      {/* BAGIAN 1: TABEL KELAYAKAN ADMINISTRASI */}
       <div>
         <div className="pb-4 mb-6 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-800">Kelayakan Administrasi Dokumen</h2>
         </div>
 
+        {/* Filter */}
         <div className="flex gap-4 mb-6 items-end">
           <div className="w-64">
             <label className="block text-xs font-semibold text-gray-500 mb-1">Provinsi</label>
@@ -66,6 +85,7 @@ export default function TabPenilaianSLHD() {
           </button>
         </div>
 
+        {/* Tabel Administrasi */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -83,9 +103,13 @@ export default function TabPenilaianSLHD() {
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="py-4 px-6 text-sm font-medium bg-green-50 text-gray-800">{item.name}</td>
                     <td className="py-4 px-6 text-sm bg-green-50">
-                      <button className="text-green-600 hover:underline text-xs font-medium">
+                      {/* PERBAIKAN: Menggunakan Link untuk navigasi */}
+                      <Link 
+                        href="/pusdatin-dashboard/detail-pus" 
+                        className="text-green-600 hover:underline text-xs font-medium"
+                      >
                         Lihat Dokumen
-                      </button>
+                      </Link>
                     </td>
                     <td className="py-4 px-6 text-center bg-green-50 text-green-600 text-xl">
                       {item.buku1 ? <MdCheckBox /> : <MdCheckBoxOutlineBlank className="text-gray-300" />}
@@ -103,6 +127,7 @@ export default function TabPenilaianSLHD() {
           </div>
         </div>
 
+        {/* Pagination Administrasi */}
         <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-gray-700">
             Menampilkan {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, slhdData.length)} dari {slhdData.length} data
@@ -115,6 +140,7 @@ export default function TabPenilaianSLHD() {
         </div>
       </div>
 
+      {/* BAGIAN 2: TOMBOL DOWNLOAD & UPLOAD */}
       <div>
         <div className="pb-4 mb-6 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-800">Penilaian SLHD</h2>
@@ -148,6 +174,7 @@ export default function TabPenilaianSLHD() {
           </div>
         </div>
 
+        {/* BAGIAN 3: TABEL HASIL PENILAIAN */}
         <div className="pb-4 mb-6 border-b border-gray-200">
           <h3 className="font-bold text-gray-800">Hasil Penilaian</h3>
         </div>
@@ -177,6 +204,7 @@ export default function TabPenilaianSLHD() {
           </div>
         </div>
 
+        {/* Pagination Hasil Penilaian */}
         <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-gray-700">
             Menampilkan {((currentPageNilai - 1) * itemsPerPage) + 1} - {Math.min(currentPageNilai * itemsPerPage, slhdData.length)} dari {slhdData.length} data
