@@ -2,8 +2,8 @@
 import Axios from 'axios';
 
 const axios = Axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true, // <-- INI KUNCINYA
+  baseURL: 'https://web-production-65a22.up.railway.app',
+  withCredentials: true,
   headers: {
     'X-Requested-With': 'XMLHttpRequest',
   },
