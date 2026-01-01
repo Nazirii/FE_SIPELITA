@@ -1,11 +1,161 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
 import axios from '@/lib/axios';
 import InnerNav from '@/components/InnerNav';
 import ProgressCard from '@/components/ProgressCard';
-import { FaFileExcel, FaCloudUploadAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaFilter } from 'react-icons/fa';
+import { FaFileExcel, FaCloudUploadAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaFilter, FaExclamationTriangle, FaInfoCircle, FaLock, FaSyncAlt, FaUsers } from 'react-icons/fa';
 import { MdCheckBox, MdCheckBoxOutlineBlank } from 'react-icons/md';
+import { IoClose } from 'react-icons/io5';
+
+// --- TOAST NOTIFICATION SYSTEM ---
+type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+interface Toast {
+    id: number;
+    type: ToastType;
+    message: string;
+}
+
+interface ToastContextType {
+    showToast: (type: ToastType, message: string) => void;
+}
+
+const ToastContext = createContext<ToastContextType | null>(null);
+
+function ToastProvider({ children }: { children: React.ReactNode }) {
+    const [toasts, setToasts] = useState<Toast[]>([]);
+
+    const showToast = useCallback((type: ToastType, message: string) => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, type, message }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 4000);
+    }, []);
+
+    const removeToast = (id: number) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    };
+
+    const getIcon = (type: ToastType) => {
+        switch (type) {
+            case 'success': return <FaCheckCircle className="text-green-500 text-xl" />;
+            case 'error': return <FaTimesCircle className="text-red-500 text-xl" />;
+            case 'warning': return <FaExclamationTriangle className="text-yellow-500 text-xl" />;
+            case 'info': return <FaInfoCircle className="text-blue-500 text-xl" />;
+        }
+    };
+
+    const getBgColor = (type: ToastType) => {
+        switch (type) {
+            case 'success': return 'bg-green-50 border-green-200';
+            case 'error': return 'bg-red-50 border-red-200';
+            case 'warning': return 'bg-yellow-50 border-yellow-200';
+            case 'info': return 'bg-blue-50 border-blue-200';
+        }
+    };
+
+    return (
+        <ToastContext.Provider value={{ showToast }}>
+            {children}
+            {/* Toast Container */}
+            <div className="fixed top-4 right-4 z-50 space-y-2">
+                {toasts.map(toast => (
+                    <div 
+                        key={toast.id}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg min-w-[300px] max-w-[400px] animate-slide-in ${getBgColor(toast.type)}`}
+                    >
+                        {getIcon(toast.type)}
+                        <span className="flex-1 text-sm text-gray-700">{toast.message}</span>
+                        <button onClick={() => removeToast(toast.id)} className="text-gray-400 hover:text-gray-600">
+                            <IoClose />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </ToastContext.Provider>
+    );
+}
+
+const useToast = () => {
+    const context = useContext(ToastContext);
+    if (!context) throw new Error('useToast must be used within ToastProvider');
+    return context;
+};
+
+// --- CONFIRMATION MODAL ---
+interface ConfirmModalProps {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'warning' | 'danger' | 'info';
+    onConfirm: () => void;
+    onCancel: () => void;
+    isLoading?: boolean;
+}
+
+function ConfirmModal({ isOpen, title, message, confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', type = 'warning', onConfirm, onCancel, isLoading }: ConfirmModalProps) {
+    if (!isOpen) return null;
+
+    const getTypeStyles = () => {
+        switch (type) {
+            case 'danger': return { icon: <FaExclamationTriangle className="text-red-500 text-3xl" />, btnColor: 'bg-red-600 hover:bg-red-700' };
+            case 'warning': return { icon: <FaExclamationTriangle className="text-yellow-500 text-3xl" />, btnColor: 'bg-yellow-600 hover:bg-yellow-700' };
+            case 'info': return { icon: <FaInfoCircle className="text-blue-500 text-3xl" />, btnColor: 'bg-blue-600 hover:bg-blue-700' };
+        }
+    };
+
+    const styles = getTypeStyles();
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 animate-scale-in">
+                <div className="p-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 p-3 bg-gray-100 rounded-full">
+                            {styles.icon}
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                            <p className="mt-2 text-sm text-gray-600">{message}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-6 justify-end">
+                        <button
+                            onClick={onCancel}
+                            disabled={isLoading}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        >
+                            {cancelText}
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            disabled={isLoading}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${styles.btnColor}`}
+                        >
+                            {isLoading && <FaSpinner className="animate-spin" />}
+                            {confirmText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// --- FINALIZED BADGE ---
+function FinalizedBadge() {
+    return (
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 border border-green-300 rounded-lg">
+            <FaLock className="text-green-600" />
+            <span className="text-sm font-medium text-green-700">Data Sudah Difinalisasi</span>
+        </div>
+    );
+}
 
 // --- INTERFACES ---
 interface Province {
@@ -24,6 +174,7 @@ interface DinasSubmission {
     all_finalized: boolean;
     buku1_status?: 'draft' | 'finalized' | 'approved';
     buku2_status?: 'draft' | 'finalized' | 'approved';
+    buku3_status?: 'draft' | 'finalized' | 'approved';
     tabel_status?: 'draft' | 'finalized' | 'approved';
 }
 
@@ -173,11 +324,16 @@ interface WawancaraData {
 }
 
 // --- KOMPONEN TAB PENILAIAN SLHD ---
-function TabPenilaianSLHD() {
+interface TabProps {
+    provinsiList: Province[];
+    submissions: DinasSubmission[];
+    onRefreshSubmissions?: () => void;
+}
+
+function TabPenilaianSLHD({ provinsiList, submissions, onRefreshSubmissions }: TabProps) {
+    const { showToast } = useToast();
     const [tipeFilter, setTipeFilter] = useState<'all' | 'provinsi' | 'kabupaten/kota'>('all');
     const [provinsiFilter, setProvinsiFilter] = useState<string>('');
-    const [provinsiList, setProvinsiList] = useState<Province[]>([]);
-    const [submissions, setSubmissions] = useState<DinasSubmission[]>([]);
     const [parsedData, setParsedData] = useState<ParsedSLHD[]>([]);
     const [penilaianSLHD, setPenilaianSLHD] = useState<PenilaianSLHD | null>(null);
     const [penilaianList, setPenilaianList] = useState<PenilaianSLHD[]>([]);
@@ -185,34 +341,29 @@ function TabPenilaianSLHD() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [uploadCatatan, setUploadCatatan] = useState('');
-    const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>('all');
+    const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [currentPageParsed, setCurrentPageParsed] = useState(1);
     
     // Filter independen untuk hasil penilaian
     const [tipeFilterParsed, setTipeFilterParsed] = useState<'all' | 'provinsi' | 'kabupaten/kota'>('all');
     const [provinsiFilterParsed, setProvinsiFilterParsed] = useState<string>('');
-    const [itemsPerPageParsed, setItemsPerPageParsed] = useState<number | 'all'>('all' as const);
+    const [itemsPerPageParsed, setItemsPerPageParsed] = useState<number | 'all'>(10);
+    
+    // State untuk floating panel
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isFinalizingLocal, setIsFinalizingLocal] = useState(false);
 
     const year = new Date().getFullYear();
 
-    // Fetch provinsi list on mount
-    useEffect(() => {
-        axios.get('/api/wilayah/provinces')
-            .then(res => setProvinsiList(res.data?.data || []))
-            .catch(console.error);
-    }, []);
-
-    // Fetch data
+    // Fetch SLHD penilaian data only (provinces & submissions dari props)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [submissionRes, penilaianRes] = await Promise.all([
-                axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`),
-                axios.get(`/api/pusdatin/penilaian/slhd/${year}`)
-            ]);
-
-            setSubmissions(submissionRes.data.data || []);
+            const penilaianRes = await axios.get(`/api/pusdatin/penilaian/slhd/${year}`);
             
             // Backend mengembalikan array semua penilaian SLHD
             const penilaianData = penilaianRes.data.data;
@@ -289,6 +440,7 @@ function TabPenilaianSLHD() {
         
         setSelectedPenilaianId(penilaianId);
         setPenilaianSLHD(selected);
+        setIsPanelOpen(false); // Tutup panel setelah memilih
         
         try {
             const parsedRes = await axios.get(`/api/pusdatin/penilaian/slhd/parsed/${penilaianId}`);
@@ -313,7 +465,7 @@ function TabPenilaianSLHD() {
             link.remove();
         } catch (err) {
             console.error('Error downloading template:', err);
-            alert('Gagal mengunduh template');
+            showToast('error', 'Gagal mengunduh template');
         }
     };
 
@@ -334,12 +486,12 @@ function TabPenilaianSLHD() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
-            alert('File berhasil diupload dan sedang diproses');
+            showToast('success', 'File berhasil diupload dan sedang diproses');
             setUploadCatatan(''); // Reset catatan
             fetchData(); // Refresh data
         } catch (err: any) {
             console.error('Error uploading file:', err);
-            alert(err.response?.data?.message || 'Gagal mengupload file');
+            showToast('error', err.response?.data?.message || 'Gagal mengupload file');
         } finally {
             setUploading(false);
             e.target.value = ''; // Reset input
@@ -349,15 +501,18 @@ function TabPenilaianSLHD() {
     // Finalisasi
     const handleFinalize = async () => {
         if (!penilaianSLHD) return;
-        if (!confirm('Apakah Anda yakin ingin memfinalisasi penilaian SLHD? Setelah difinalisasi, data tidak dapat diubah.')) return;
-
+        
         try {
-            await axios.patch(`/api/pusdatin/penilaian/slhd/finalize/${penilaianSLHD.id}`);
-            alert('Penilaian SLHD berhasil difinalisasi');
+            setIsFinalizingLocal(true);
+            await axios.patch(`/api/pusdatin/penilaian/slhd/finalize/${penilaianSLHD.id}`, {}, { timeout: 300000 });
+            showToast('success', 'Penilaian SLHD berhasil difinalisasi');
+            setShowConfirmModal(false);
             fetchData();
         } catch (err: any) {
             console.error('Error finalizing:', err);
-            alert(err.response?.data?.message || 'Gagal memfinalisasi');
+            showToast('error', err.response?.data?.message || 'Gagal memfinalisasi');
+        } finally {
+            setIsFinalizingLocal(false);
         }
     };
 
@@ -385,8 +540,18 @@ function TabPenilaianSLHD() {
         <div className="space-y-8">
             {/* BAGIAN 1: FILTER & TABEL KELAYAKAN ADMINISTRASI */}
             <div>
-                <div className="pb-4 mb-6 border-b border-gray-200">
+                <div className="pb-4 mb-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 className="text-lg font-bold text-gray-800">Kelayakan Administrasi Dokumen</h2>
+                    {onRefreshSubmissions && (
+                        <button
+                            onClick={onRefreshSubmissions}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Refresh data kelayakan"
+                        >
+                            <FaSyncAlt className="text-sm" />
+                            Refresh
+                        </button>
+                    )}
                 </div>
 
                 {/* Filter */}
@@ -457,6 +622,7 @@ function TabPenilaianSLHD() {
                                     {/* <th className="py-3 px-4 text-left text-xs font-bold text-gray-700 uppercase">Aksi</th> */}
                                     <th className="py-3 px-4 text-center text-xs font-bold text-gray-700 uppercase">Buku I</th>
                                     <th className="py-3 px-4 text-center text-xs font-bold text-gray-700 uppercase">Buku II</th>
+                                    <th className="py-3 px-4 text-center text-xs font-bold text-gray-700 uppercase">Buku III</th>
                                     <th className="py-3 px-4 text-center text-xs font-bold text-gray-700 uppercase">Tabel Utama</th>
                                 </tr>
                             </thead>
@@ -498,7 +664,14 @@ function TabPenilaianSLHD() {
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-center text-xl">
-                                                {item.tabel_status === 'approved' ? (
+                                                {item.buku3_status === 'approved' ? (
+                                                    <MdCheckBox className="inline text-green-600" />
+                                                ) : (
+                                                    <MdCheckBoxOutlineBlank className="inline text-gray-300" />
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-4 text-center text-xl">
+                                                {item.tabel_status === 'finalized' ? (
                                                     <MdCheckBox className="inline text-green-600" />
                                                 ) : (
                                                     <MdCheckBoxOutlineBlank className="inline text-gray-300" />
@@ -681,54 +854,151 @@ function TabPenilaianSLHD() {
                         </select>
                     </div>
                 </div>
-                <div className="pb-4 mb-6 border-b border-gray-200 flex justify-between items-end">
-                   
-                   
-                    
-                    <div className="flex gap-4 items-end">
-                        {/* Dropdown Pilih Versi Penilaian */}
-                        {penilaianList.length > 0 && (
-                            <div className="w-96">
-                                <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Versi Penilaian</label>
-                                <select
-                                    value={selectedPenilaianId || ''}
-                                    onChange={(e) => handlePenilaianChange(Number(e.target.value))}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                                >
-                                {penilaianList.map((p, idx) => {
-                                    const uploadDate = new Date(p.uploaded_at).toLocaleString('id-ID', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    });
-                                    const uploaderEmail = p.uploaded_by?.email || 'Unknown';
-                                    const catatan = p.catatan || 'Tanpa Catatan';
-                                    const statusLabel = p.is_finalized ? ' 🔒' : '';
-                                    
-                                    return (
-                                        <option key={p.id} value={p.id}>
-                                            {uploadDate} • {uploaderEmail} • {catatan}{statusLabel}
-                                        </option>
-                                    );
-                                })}
-                            </select>
-                        </div>
-                    )}
-                    
-                    {/* Tombol Finalisasi */}
-                    {penilaianSLHD && !penilaianSLHD.is_finalized && parsedData.length > 0 && (
-                        <button
-                            onClick={handleFinalize}
-                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-                        >
-                            🔒 Finalisasi Versi Ini
-                        </button>
-                    )}
-                </div>
-            </div>
                 
+                {/* Button untuk membuka panel pilih versi penilaian */}
+                {penilaianList.length > 0 && !isPanelOpen && (
+                    <div className="mb-6">
+                        <button
+                            onClick={() => setIsPanelOpen(true)}
+                            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-between group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-lg font-bold">Pilih Versi Penilaian</p>
+                                    <p className="text-xs text-green-100">Klik untuk melihat {penilaianList.length} versi penilaian yang tersedia</p>
+                                </div>
+                            </div>
+                            <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                )}
+
+                {/* Floating Card untuk Pilih Versi Penilaian */}
+                {penilaianList.length > 0 && isPanelOpen && (
+                    <div className="bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-2xl shadow-lg p-6 mb-6 animate-fade-in">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-green-100 p-3 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-800 text-lg">Pilih Versi Penilaian</h3>
+                                    <p className="text-xs text-gray-500">Pilih versi hasil penilaian SLHD yang ingin ditampilkan</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {penilaianSLHD?.is_finalized && <FinalizedBadge />}
+                                <button
+                                    onClick={() => setIsPanelOpen(false)}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg transition-colors"
+                                    title="Tutup panel"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {penilaianList.map((p, idx) => {
+                                const uploadDate = new Date(p.uploaded_at);
+                                const tanggal = uploadDate.toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                                const waktu = uploadDate.toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                // const uploaderName = p.uploaded_by?.name || 'Unknown User';
+                                const uploaderEmail = p.uploaded_by?.email || '-';
+                                const catatan = p.catatan || 'Tanpa catatan khusus';
+                                const isSelected = selectedPenilaianId === p.id;
+                                const isLocked = penilaianSLHD?.is_finalized && !isSelected;
+                                
+                                return (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => !isLocked && handlePenilaianChange(p.id)}
+                                        disabled={isLocked}
+                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                                            isSelected
+                                                ? 'border-green-500 bg-green-50 shadow-md'
+                                                : isLocked
+                                                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                                    : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className={`text-sm font-bold ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>
+                                                        Versi #{penilaianList.length - idx}
+                                                    </span>
+                                                    {p.is_finalized && (
+                                                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1">
+                                                            <FaLock className="text-[10px]" /> Finalized
+                                                        </span>
+                                                    )}
+                                                    {isSelected && (
+                                                        <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                                            Aktif
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-2">
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">📅 Tanggal Upload</p>
+                                                        <p className="text-sm font-medium text-gray-700">{tanggal}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">🕐 Waktu</p>
+                                                        <p className="text-sm font-medium text-gray-700">{waktu} WIB</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">👤 Diupload Oleh</p>
+                                                        {/* <p className="text-sm font-medium text-gray-700">{uploaderName}</p> */}
+                                                        <p className="text-xs text-gray-400">{uploaderEmail}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">📝 Catatan</p>
+                                                        <p className="text-sm font-medium text-gray-700 italic">{catatan}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {isSelected && (
+                                                <div className="flex-shrink-0">
+                                                    <div className="bg-green-500 rounded-full p-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* BAGIAN 3: TABEL HASIL PENILAIAN */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -812,14 +1082,38 @@ function TabPenilaianSLHD() {
                 </div>
 
             </div>
+
+            {/* BAGIAN 4: TOMBOL FINALISASI DI BAWAH */}
+            {penilaianSLHD && !penilaianSLHD.is_finalized && parsedData.length > 0 && (
+                <div className="flex justify-end pt-4 border-t border-gray-200">
+                    <button
+                        onClick={() => setShowConfirmModal(true)}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                    >
+                        <FaLock /> Finalisasi Penilaian SLHD
+                    </button>
+                </div>
+            )}
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Penilaian SLHD"
+                message="Apakah Anda yakin ingin memfinalisasi penilaian SLHD? Setelah difinalisasi, data tidak dapat diubah dan versi penilaian akan terkunci."
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleFinalize}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isFinalizingLocal}
+            />
         </div>
     );
 }
 
 // --- KOMPONEN TAB PENILAIAN PENGHARGAAN ---
-function TabPenilaianPenghargaan() {
-    const [provinsiList, setProvinsiList] = useState<Province[]>([]);
-    const [submissions, setSubmissions] = useState<DinasSubmission[]>([]);
+function TabPenilaianPenghargaan({ provinsiList, submissions }: TabProps) {
+    const { showToast } = useToast();
     const [parsedData, setParsedData] = useState<ParsedPenghargaan[]>([]);
     const [penilaianPenghargaan, setPenilaianPenghargaan] = useState<PenilaianPenghargaan | null>(null);
     const [penilaianList, setPenilaianList] = useState<PenilaianPenghargaan[]>([]);
@@ -833,26 +1127,21 @@ function TabPenilaianPenghargaan() {
     const [tipeFilterParsed, setTipeFilterParsed] = useState<'all' | 'provinsi' | 'kabupaten/kota'>('all');
     const [provinsiFilterParsed, setProvinsiFilterParsed] = useState<string>('');
     const [itemsPerPageParsed, setItemsPerPageParsed] = useState<number | 'all'>('all' as const);
+    
+    // State untuk floating panel
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isFinalizingLocal, setIsFinalizingLocal] = useState(false);
 
     const year = new Date().getFullYear();
 
-    // Fetch provinsi list on mount
-    useEffect(() => {
-        axios.get('/api/wilayah/provinces')
-            .then(res => setProvinsiList(res.data?.data || []))
-            .catch(console.error);
-    }, []);
-
-    // Fetch data
+    // Fetch Penghargaan penilaian data only (provinces & submissions dari props)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [submissionRes, penilaianRes] = await Promise.all([
-                axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`),
-                axios.get(`/api/pusdatin/penilaian/penghargaan/${year}`)
-            ]);
-
-            setSubmissions(submissionRes.data.data || []);
+            const penilaianRes = await axios.get(`/api/pusdatin/penilaian/penghargaan/${year}`);
             
             const penilaianData = penilaianRes.data.data;
             if (penilaianData && penilaianData.length > 0) {
@@ -903,6 +1192,7 @@ function TabPenilaianPenghargaan() {
         
         setSelectedPenilaianId(penilaianId);
         setPenilaianPenghargaan(selected);
+        setIsPanelOpen(false); // Tutup panel setelah memilih
         
         try {
             const parsedRes = await axios.get(`/api/pusdatin/penilaian/penghargaan/parsed/${penilaianId}`);
@@ -928,7 +1218,7 @@ function TabPenilaianPenghargaan() {
         } catch (err: any) {
             console.error('Error downloading template:', err);
             const errorMsg = err.response?.data?.message || 'Gagal mengunduh template. Pastikan penilaian SLHD sudah difinalisasi.';
-            alert(errorMsg);
+            showToast('error', errorMsg);
         }
     };
 
@@ -949,12 +1239,12 @@ function TabPenilaianPenghargaan() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
-            alert('File berhasil diupload dan sedang diproses');
+            showToast('success', 'File berhasil diupload dan sedang diproses');
             setUploadCatatan('');
             fetchData();
         } catch (err: any) {
             console.error('Error uploading file:', err);
-            alert(err.response?.data?.message || 'Gagal mengupload file');
+            showToast('error', err.response?.data?.message || 'Gagal mengupload file');
         } finally {
             setUploading(false);
             e.target.value = '';
@@ -964,15 +1254,18 @@ function TabPenilaianPenghargaan() {
     // Finalisasi
     const handleFinalize = async () => {
         if (!penilaianPenghargaan) return;
-        if (!confirm('Apakah Anda yakin ingin memfinalisasi penilaian Penghargaan? Setelah difinalisasi, data tidak dapat diubah.')) return;
 
         try {
-            await axios.patch(`/api/pusdatin/penilaian/penghargaan/finalize/${penilaianPenghargaan.id}`);
-            alert('Penilaian Penghargaan berhasil difinalisasi');
+            setIsFinalizingLocal(true);
+            await axios.patch(`/api/pusdatin/penilaian/penghargaan/finalize/${penilaianPenghargaan.id}`, {}, { timeout: 300000 });
+            showToast('success', 'Penilaian Penghargaan berhasil difinalisasi');
+            setShowConfirmModal(false);
             fetchData();
         } catch (err: any) {
             console.error('Error finalizing:', err);
-            alert(err.response?.data?.message || 'Gagal memfinalisasi');
+            showToast('error', err.response?.data?.message || 'Gagal memfinalisasi');
+        } finally {
+            setIsFinalizingLocal(false);
         }
     };
 
@@ -1059,62 +1352,158 @@ function TabPenilaianPenghargaan() {
                     </div>
                 </div>
 
-                {/* Status & Dropdown Versi */}
-                <div className="pb-4 mb-6 border-b border-gray-200 flex justify-between items-end">
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-800">Hasil Penilaian Penghargaan</h2>
-                        {penilaianPenghargaan && (
-                            <p className="text-sm text-gray-500 mt-1">
-                                Status: <span className={penilaianPenghargaan.is_finalized ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
-                                    {penilaianPenghargaan.is_finalized ? '🔒 Sudah Finalisasi' : '📝 Draft'}
-                                </span>
-                            </p>
-                        )}
-                    </div>
-                    
-                    <div className="flex gap-4 items-end">
-                        {/* Dropdown Pilih Versi Penilaian */}
-                        {penilaianList.length > 0 && (
-                            <div className="w-96">
-                                <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Versi Penilaian</label>
-                                <select
-                                    value={selectedPenilaianId || ''}
-                                    onChange={(e) => handlePenilaianChange(Number(e.target.value))}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                                >
-                                    {penilaianList.map((p) => {
-                                        const uploadDate = new Date(p.uploaded_at).toLocaleString('id-ID', {
-                                            day: '2-digit',
-                                            month: 'short',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                        const uploaderEmail = p.uploaded_by?.email || 'Unknown';
-                                        const catatan = p.catatan || 'Tanpa Catatan';
-                                        const statusLabel = p.is_finalized ? ' 🔒' : '';
-                                        
-                                        return (
-                                            <option key={p.id} value={p.id}>
-                                                {uploadDate} • {uploaderEmail} • {catatan}{statusLabel}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                            </div>
-                        )}
-                        
-                        {/* Tombol Finalisasi */}
-                        {penilaianPenghargaan && !penilaianPenghargaan.is_finalized && parsedData.length > 0 && (
-                            <button
-                                onClick={handleFinalize}
-                                className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-                            >
-                                🔒 Finalisasi Versi Ini
-                            </button>
-                        )}
-                    </div>
+                {/* Status Info */}
+                <div className="pb-4 mb-6 border-b border-gray-200">
+                    <h2 className="text-lg font-bold text-gray-800">Hasil Penilaian Penghargaan</h2>
+                    {penilaianPenghargaan && (
+                        <p className="text-sm text-gray-500 mt-1">
+                            Status: <span className={penilaianPenghargaan.is_finalized ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
+                                {penilaianPenghargaan.is_finalized ? '🔒 Sudah Finalisasi' : '📝 Draft'}
+                            </span>
+                        </p>
+                    )}
                 </div>
+                
+                {/* Button untuk membuka panel pilih versi penilaian */}
+                {penilaianList.length > 0 && !isPanelOpen && (
+                    <div className="mb-6">
+                        <button
+                            onClick={() => setIsPanelOpen(true)}
+                            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-between group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-lg font-bold">Pilih Versi Penilaian</p>
+                                    <p className="text-xs text-green-100">Klik untuk melihat {penilaianList.length} versi penilaian yang tersedia</p>
+                                </div>
+                            </div>
+                            <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                )}
+
+                {/* Floating Card untuk Pilih Versi Penilaian */}
+                {penilaianList.length > 0 && isPanelOpen && (
+                    <div className="bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-2xl shadow-lg p-6 mb-6 animate-fade-in">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="bg-green-100 p-3 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-800 text-lg">Pilih Versi Penilaian</h3>
+                                    <p className="text-xs text-gray-500">Pilih versi hasil penilaian penghargaan yang ingin ditampilkan</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {penilaianPenghargaan?.is_finalized && <FinalizedBadge />}
+                                <button
+                                    onClick={() => setIsPanelOpen(false)}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg transition-colors"
+                                    title="Tutup panel"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {penilaianList.map((p, idx) => {
+                                const uploadDate = new Date(p.uploaded_at);
+                                const tanggal = uploadDate.toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                                const waktu = uploadDate.toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                const uploaderEmail = p.uploaded_by?.email || '-';
+                                const catatan = p.catatan || 'Tanpa catatan khusus';
+                                const isSelected = selectedPenilaianId === p.id;
+                                const isLocked = penilaianPenghargaan?.is_finalized && !isSelected;
+                                
+                                return (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => !isLocked && handlePenilaianChange(p.id)}
+                                        disabled={isLocked}
+                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                                            isSelected
+                                                ? 'border-green-500 bg-green-50 shadow-md'
+                                                : isLocked
+                                                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                                    : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className={`text-sm font-bold ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>
+                                                        Versi #{penilaianList.length - idx}
+                                                    </span>
+                                                    {p.is_finalized && (
+                                                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1">
+                                                            <FaLock className="text-[10px]" /> Finalized
+                                                        </span>
+                                                    )}
+                                                    {isSelected && (
+                                                        <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                                            Aktif
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-2">
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">📅 Tanggal Upload</p>
+                                                        <p className="text-sm font-medium text-gray-700">{tanggal}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">🕐 Waktu</p>
+                                                        <p className="text-sm font-medium text-gray-700">{waktu} WIB</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">👤 Diupload Oleh</p>
+                                                        <p className="text-xs text-gray-400">{uploaderEmail}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-0.5">📝 Catatan</p>
+                                                        <p className="text-sm font-medium text-gray-700 italic">{catatan}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {isSelected && (
+                                                <div className="flex-shrink-0">
+                                                    <div className="bg-green-500 rounded-full p-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* BAGIAN 2: TABEL HASIL PENILAIAN */}
@@ -1205,25 +1594,41 @@ function TabPenilaianPenghargaan() {
                 </div>
 
                 {/* Tombol Finalisasi */}
-                {penilaianPenghargaan && !penilaianPenghargaan.is_finalized && parsedData.length > 0 && (
+                {penilaianPenghargaan?.is_finalized ? (
+                    <div className="flex justify-end">
+                        <FinalizedBadge />
+                    </div>
+                ) : penilaianPenghargaan && parsedData.length > 0 && (
                     <div className="flex justify-end">
                         <button
-                            onClick={handleFinalize}
-                            className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                            onClick={() => setShowConfirmModal(true)}
+                            className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                         >
-                            Finalisasi
+                            <FaLock /> Finalisasi Penilaian Penghargaan
                         </button>
                     </div>
                 )}
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Penilaian Penghargaan"
+                message="Apakah Anda yakin ingin memfinalisasi penilaian Penghargaan? Setelah difinalisasi, data tidak dapat diubah."
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleFinalize}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isFinalizingLocal}
+            />
         </div>
     );
 }
 
 // --- KOMPONEN TAB VALIDASI 1 ---
-function TabValidasi1() {
-    const [provinsiList, setProvinsiList] = useState<Province[]>([]);
-    const [submissions, setSubmissions] = useState<DinasSubmission[]>([]);
+function TabValidasi1({ provinsiList, submissions }: TabProps) {
+    const { showToast } = useToast();
     const [parsedData, setParsedData] = useState<ParsedValidasi1[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFinalized, setIsFinalized] = useState(false);
@@ -1235,25 +1640,17 @@ function TabValidasi1() {
     const [statusFilterParsed, setStatusFilterParsed] = useState<'all' | 'lulus' | 'tidak_lulus'>('all');
     const [itemsPerPageParsed, setItemsPerPageParsed] = useState<number | 'all'>('all' as const);
 
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isFinalizingLocal, setIsFinalizingLocal] = useState(false);
+
     const year = new Date().getFullYear();
 
-    // Fetch provinsi list on mount
-    useEffect(() => {
-        axios.get('/api/wilayah/provinces')
-            .then(res => setProvinsiList(res.data?.data || []))
-            .catch(console.error);
-    }, []);
-
-    // Fetch data
+    // Fetch Validasi 1 data only (provinces & submissions dari props)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [submissionRes, validasi1Res] = await Promise.all([
-                axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`),
-                axios.get(`/api/pusdatin/penilaian/validasi-1/${year}`)
-            ]);
-
-            setSubmissions(submissionRes.data.data || []);
+            const validasi1Res = await axios.get(`/api/pusdatin/penilaian/validasi-1/${year}`);
             
             const validasi1Data = validasi1Res.data;
             if (validasi1Data && validasi1Data.length > 0) {
@@ -1304,15 +1701,17 @@ function TabValidasi1() {
 
     // Finalisasi
     const handleFinalize = async () => {
-        if (!confirm('Apakah Anda yakin ingin memfinalisasi Validasi 1? Setelah difinalisasi, data tidak dapat diubah.')) return;
-
         try {
-            await axios.patch(`/api/pusdatin/penilaian/validasi-1/${year}/finalize`);
-            alert('Validasi 1 berhasil difinalisasi');
+            setIsFinalizingLocal(true);
+            await axios.patch(`/api/pusdatin/penilaian/validasi-1/${year}/finalize`, {}, { timeout: 300000 });
+            showToast('success', 'Validasi 1 berhasil difinalisasi');
+            setShowConfirmModal(false);
             fetchData();
         } catch (err: any) {
             console.error('Error finalizing:', err);
-            alert(err.response?.data?.message || 'Gagal memfinalisasi');
+            showToast('error', err.response?.data?.message || 'Gagal memfinalisasi');
+        } finally {
+            setIsFinalizingLocal(false);
         }
     };
 
@@ -1419,24 +1818,40 @@ function TabValidasi1() {
             </div>
 
             {/* Tombol Finalisasi */}
-            {!isFinalized && parsedData.length > 0 && (
+            {isFinalized ? (
+                <div className="flex justify-end">
+                    <FinalizedBadge />
+                </div>
+            ) : parsedData.length > 0 && (
                 <div className="flex justify-end">
                     <button
-                        onClick={handleFinalize}
-                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                        onClick={() => setShowConfirmModal(true)}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                     >
-                        Finalisasi
+                        <FaLock /> Finalisasi Validasi 1
                     </button>
                 </div>
             )}
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Validasi 1"
+                message="Apakah Anda yakin ingin memfinalisasi Validasi 1? Setelah difinalisasi, data tidak dapat diubah."
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleFinalize}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isFinalizingLocal}
+            />
         </div>
     );
 }
 
 // --- KOMPONEN TAB VALIDASI 2 ---
-function TabValidasi2() {
-    const [provinsiList, setProvinsiList] = useState<Province[]>([]);
-    const [submissions, setSubmissions] = useState<DinasSubmission[]>([]);
+function TabValidasi2({ provinsiList, submissions }: TabProps) {
+    const { showToast } = useToast();
     const [parsedData, setParsedData] = useState<ParsedValidasi2[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFinalized, setIsFinalized] = useState(false);
@@ -1449,23 +1864,13 @@ function TabValidasi2() {
     const [statusFilterParsed, setStatusFilterParsed] = useState<'all' | 'lolos' | 'tidak_lolos' | 'pending'>('all');
     const [itemsPerPageParsed, setItemsPerPageParsed] = useState<number | 'all'>('all' as const);
 
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isFinalizingLocal, setIsFinalizingLocal] = useState(false);
+
     const year = new Date().getFullYear();
 
-    // Fetch provinsi list on mount
-    useEffect(() => {
-        axios.get('/api/wilayah/provinces')
-            .then(res => setProvinsiList(res.data?.data || []))
-            .catch(console.error);
-    }, []);
-
-    // Fetch submissions
-    useEffect(() => {
-        axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`)
-            .then(res => setSubmissions(res.data.data || []))
-            .catch(console.error);
-    }, [year]);
-
-    // Fetch data
+    // Fetch Validasi 2 data only (provinces & submissions dari props)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
@@ -1515,7 +1920,7 @@ function TabValidasi2() {
     // Handle checkbox change
     const handleCheckboxChange = async (id: number, field: 'Kriteria_WTP' | 'Kriteria_Kasus_Hukum', currentValue: boolean) => {
         if (isFinalized) {
-            alert('Data sudah difinalisasi, tidak dapat diubah');
+            showToast('warning', 'Data sudah difinalisasi, tidak dapat diubah');
             return;
         }
 
@@ -1533,7 +1938,7 @@ function TabValidasi2() {
             fetchData();
         } catch (err: any) {
             console.error('Error updating checklist:', err);
-            alert(err.response?.data?.message || 'Gagal mengupdate checklist');
+            showToast('error', err.response?.data?.message || 'Gagal mengupdate checklist');
         } finally {
             setUpdatingId(null);
         }
@@ -1541,15 +1946,17 @@ function TabValidasi2() {
 
     // Finalisasi
     const handleFinalize = async () => {
-        if (!confirm('Apakah Anda yakin ingin memfinalisasi Validasi 2? Setelah difinalisasi, data tidak dapat diubah.')) return;
-
         try {
-            await axios.post(`/api/pusdatin/penilaian/validasi-2/${year}/finalize`);
-            alert('Validasi 2 berhasil difinalisasi');
+            setIsFinalizingLocal(true);
+            await axios.post(`/api/pusdatin/penilaian/validasi-2/${year}/finalize`, {}, { timeout: 300000 });
+            showToast('success', 'Validasi 2 berhasil difinalisasi');
+            setShowConfirmModal(false);
             fetchData();
         } catch (err: any) {
             console.error('Error finalizing:', err);
-            alert(err.response?.data?.message || 'Gagal memfinalisasi');
+            showToast('error', err.response?.data?.message || 'Gagal memfinalisasi');
+        } finally {
+            setIsFinalizingLocal(false);
         }
     };
 
@@ -1670,28 +2077,49 @@ function TabValidasi2() {
             </div>
 
             {/* Tombol Finalisasi */}
-            {!isFinalized && parsedData.length > 0 && (
+            {isFinalized ? (
+                <div className="flex justify-end">
+                    <FinalizedBadge />
+                </div>
+            ) : parsedData.length > 0 && (
                 <div className="flex justify-end">
                     <button
-                        onClick={handleFinalize}
-                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                        onClick={() => setShowConfirmModal(true)}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                     >
-                        Finalisasi
+                        <FaLock /> Finalisasi Validasi 2
                     </button>
                 </div>
             )}
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Validasi 2"
+                message="Apakah Anda yakin ingin memfinalisasi Validasi 2? Setelah difinalisasi, data tidak dapat diubah."
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleFinalize}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isFinalizingLocal}
+            />
         </div>
     );
 }
 
 // --- KOMPONEN TAB PENETAPAN PERINGKAT ---
 function TabPenetapanPeringkat() {
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [rankedData, setRankedData] = useState<RankedData[]>([]);
     const [selectedKategori, setSelectedKategori] = useState<string>('');
     const [selectedJenisPeringkat, setSelectedJenisPeringkat] = useState<string>('top5');
     const [topN, setTopN] = useState<number>(5);
     const [isCreatingWawancara, setIsCreatingWawancara] = useState(false);
+
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const year = new Date().getFullYear();
 
@@ -1709,6 +2137,7 @@ function TabPenetapanPeringkat() {
     const jenisPeringkatOptions = [
         { value: 'top5', label: 'Top 5' },
         { value: 'top10', label: 'Top 10' },
+        { value: 'custom', label: 'Custom' },
         { value: 'all', label: 'Semua' },
     ];
 
@@ -1743,21 +2172,22 @@ function TabPenetapanPeringkat() {
     useEffect(() => {
         if (selectedJenisPeringkat === 'top5') setTopN(5);
         else if (selectedJenisPeringkat === 'top10') setTopN(10);
+        else if (selectedJenisPeringkat === 'custom' && topN === 5) setTopN(1); // Set default for custom
+        // Don't change topN for 'all' or when custom value is already set
     }, [selectedJenisPeringkat]);
 
     // Create wawancara (finalisasi ranking)
     const handleCreateWawancara = async () => {
-        if (!confirm(`Apakah Anda yakin ingin memfinalisasi peringkat? Top ${topN} dari setiap kategori akan masuk ke tahap wawancara.`)) return;
-
         try {
             setIsCreatingWawancara(true);
             await axios.post(`/api/pusdatin/penilaian/validasi-2/${year}/create-wawancara`, {
                 top: topN
-            });
-            alert('Penetapan peringkat berhasil difinalisasi. Data peserta wawancara telah dibuat.');
+            }, { timeout: 300000 });
+            showToast('success', 'Penetapan peringkat berhasil difinalisasi. Data peserta wawancara telah dibuat.');
+            setShowConfirmModal(false);
         } catch (err: any) {
             console.error('Error creating wawancara:', err);
-            alert(err.response?.data?.message || 'Gagal membuat data wawancara');
+            showToast('error', err.response?.data?.message || 'Gagal membuat data wawancara');
         } finally {
             setIsCreatingWawancara(false);
         }
@@ -1799,6 +2229,20 @@ function TabPenetapanPeringkat() {
                         ))}
                     </select>
                 </div>
+                {selectedJenisPeringkat === 'custom' && (
+                    <div className="w-32">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Jumlah Top</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="999"
+                            value={topN}
+                            onChange={(e) => setTopN(Math.max(1, Math.min(999, parseInt(e.target.value) || 1)))}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="Top N"
+                        />
+                    </div>
+                )}
                 <button
                     onClick={fetchRankedData}
                     className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
@@ -1884,7 +2328,7 @@ function TabPenetapanPeringkat() {
             {rankedData.length > 0 && (
                 <div className="flex justify-end">
                     <button
-                        onClick={handleCreateWawancara}
+                        onClick={() => setShowConfirmModal(true)}
                         disabled={isCreatingWawancara}
                         className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                     >
@@ -1893,17 +2337,33 @@ function TabPenetapanPeringkat() {
                                 <FaSpinner className="animate-spin" /> Memproses...
                             </>
                         ) : (
-                            'Finalisasi'
+                            <>
+                                <FaLock /> Finalisasi Penetapan Peringkat
+                            </>
                         )}
                     </button>
                 </div>
             )}
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Penetapan Peringkat"
+                message={`Apakah Anda yakin ingin memfinalisasi peringkat? Top ${topN} dari setiap kategori akan masuk ke tahap wawancara.`}
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleCreateWawancara}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isCreatingWawancara}
+            />
         </div>
     );
 }
 
 // --- KOMPONEN TAB WAWANCARA ---
 function TabWawancara() {
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [wawancaraData, setWawancaraData] = useState<WawancaraData[]>([]);
     const [selectedKategori, setSelectedKategori] = useState<string>('');
@@ -1914,6 +2374,10 @@ function TabWawancara() {
     const [rekapData, setRekapData] = useState<any>(null);
     const [loadingRekap, setLoadingRekap] = useState(false);
     const [inputValue, setInputValue] = useState<string>('');
+
+    // Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isFinalizingLocal, setIsFinalizingLocal] = useState(false);
 
     const year = new Date().getFullYear();
 
@@ -2004,13 +2468,13 @@ function TabWawancara() {
     const handleUpdateNilai = async () => {
         if (!currentDinasData) return;
         if (isFinalized) {
-            alert('Data sudah difinalisasi, tidak dapat diubah');
+            showToast('warning', 'Data sudah difinalisasi, tidak dapat diubah');
             return;
         }
 
         const nilaiNum = parseFloat(inputValue);
         if (isNaN(nilaiNum) || nilaiNum < 0 || nilaiNum > 100) {
-            alert('Nilai harus antara 0-100');
+            showToast('error', 'Nilai harus antara 0-100');
             setInputValue(currentDinasData.nilai_wawancara?.toString() ?? '');
             return;
         }
@@ -2020,10 +2484,11 @@ function TabWawancara() {
             await axios.patch(`/api/pusdatin/penilaian/wawancara/${currentDinasData.id}/nilai`, {
                 nilai_wawancara: nilaiNum
             });
+            showToast('success', 'Nilai wawancara berhasil disimpan');
             await fetchData();
         } catch (err: any) {
             console.error('Error updating nilai:', err);
-            alert(err.response?.data?.message || 'Gagal mengupdate nilai');
+            showToast('error', err.response?.data?.message || 'Gagal mengupdate nilai');
             setInputValue(currentDinasData.nilai_wawancara?.toString() ?? '');
         } finally {
             setUpdatingId(null);
@@ -2032,17 +2497,37 @@ function TabWawancara() {
 
     // Finalisasi
     const handleFinalize = async () => {
-        if (!confirm('Apakah Anda yakin ingin memfinalisasi hasil wawancara? Setelah difinalisasi, nilai akhir akan dihitung dan data tidak dapat diubah.')) return;
-
         try {
-            await axios.patch(`/api/pusdatin/penilaian/wawancara/${year}/finalize`);
-            alert('Hasil wawancara berhasil difinalisasi. Nilai akhir telah dihitung.');
+            setIsFinalizingLocal(true);
+            await axios.patch(`/api/pusdatin/penilaian/wawancara/${year}/finalize`, {}, { timeout: 300000 });
+            showToast('success', 'Hasil wawancara berhasil difinalisasi. Nilai akhir telah dihitung.');
+            setShowConfirmModal(false);
             fetchData();
         } catch (err: any) {
             console.error('Error finalizing:', err);
-            alert(err.response?.data?.message || 'Gagal memfinalisasi');
+            showToast('error', err.response?.data?.message || 'Gagal memfinalisasi');
+        } finally {
+            setIsFinalizingLocal(false);
         }
     };
+
+    // Stats untuk progress
+    const progressStats = useMemo(() => {
+        const total = wawancaraData.length;
+        const sudahDinilai = wawancaraData.filter(d => d.nilai_wawancara !== null).length;
+        const belumDinilai = total - sudahDinilai;
+        return { total, sudahDinilai, belumDinilai };
+    }, [wawancaraData]);
+
+    // Group by kategori untuk tampilan list
+    const groupedByKategori = useMemo(() => {
+        const groups: Record<string, WawancaraData[]> = {};
+        wawancaraData.forEach(item => {
+            if (!groups[item.kategori]) groups[item.kategori] = [];
+            groups[item.kategori].push(item);
+        });
+        return groups;
+    }, [wawancaraData]);
 
     if (loading) {
         return (
@@ -2053,56 +2538,174 @@ function TabWawancara() {
         );
     }
 
+    // Get kategori label
+    const getKategoriLabel = (value: string) => {
+        const opt = kategoriOptions.find(o => o.value === value);
+        return opt?.label || value.replace(/_/g, ' ');
+    };
+
     return (
         <div className="space-y-8">
-            {/* BAGIAN 1: HEADER */}
+            {/* BAGIAN 1: HEADER + PROGRESS STATS */}
             <div>
                 <div className="pb-4 mb-6 border-b border-gray-200">
                     <h2 className="text-lg font-bold text-gray-800">Penilaian Wawancara & Perhitungan Nirwasita Tantra Final</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                        Atur Penilaian Nilai Nirwasita Tantra dari Dokumen-Dokumen Kab/Kota.
+                        Pilih kandidat dari daftar di bawah atau gunakan dropdown untuk menilai wawancara.
                     </p>
                 </div>
+
+                {/* Progress Cards */}
+                <div className="grid grid-cols-9 gap-4 mb-6">
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <div className="text-3xl font-bold text-blue-700">{progressStats.total}</div>
+                        <div className="text-sm text-green-600">Total Kandidat</div>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <div className="text-3xl font-bold text-green-700">{progressStats.sudahDinilai}</div>
+                        <div className="text-sm text-green-600">Sudah Dinilai</div>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <div className="text-3xl font-bold text-yellow-700">{progressStats.belumDinilai}</div>
+                        <div className="text-sm text-green-600">Belum Dinilai</div>
+                    </div>
+                </div>
             </div>
 
-            {/* BAGIAN 2: CASCADING DROPDOWNS */}
-            <div className="flex flex-wrap gap-4 mb-6">
-                {/* Dropdown 1: Jenis DLH */}
-                <div className="w-72">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Jenis DLH</label>
-                    <select 
-                        value={selectedKategori}
-                        onChange={(e) => {
-                            setSelectedKategori(e.target.value);
-                            setSelectedDinas(null);
-                        }}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                        {kategoriOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
+            {/* BAGIAN 2: LIST KANDIDAT PER KATEGORI */}
+            <div>
+                <div className="pb-4 mb-4 border-b border-gray-200">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                        <FaUsers className="text-green-600" /> Daftar Kandidat Wawancara
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">Klik pada kandidat untuk langsung menilai</p>
                 </div>
 
-                {/* Dropdown 2: Pilih Dinas (conditional) */}
-                {selectedKategori && (
-                    <div className="w-96">
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Kab/Kota</label>
-                        <select 
-                            value={selectedDinas || ''}
-                            onChange={(e) => setSelectedDinas(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                            <option value="">-- Pilih Kab/Kota --</option>
-                            {filteredDinasOptions.map(dinas => (
-                                <option key={dinas.id} value={dinas.id}>
-                                    {dinas.nama_dinas}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                )}
+                {/* Grid of Category Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Object.entries(groupedByKategori).map(([kategori, items]) => {
+                        const sudahDinilaiCount = items.filter(i => i.nilai_wawancara !== null).length;
+                        const progress = (sudahDinilaiCount / items.length) * 100;
+                        
+                        return (
+                            <div key={kategori} className="bg-green-50/60 backdrop-blur-sm rounded-2xl border border-green-200/50 overflow-hidden hover:shadow-lg transition-shadow">
+                                {/* Card Header */}
+                                <div className="px-4 py-3">
+                                    <h4 className="font-semibold text-green-600 capitalize text-sm">{getKategoriLabel(kategori)}</h4>
+                                    <div className="flex items-center justify-between mt-1">
+                                        <span className="text-xs text-green-600">{sudahDinilaiCount}/{items.length} dinilai</span>
+                                        <span className="text-xs font-bold text-green-600">{progress.toFixed(0)}%</span>
+                                    </div>
+                                    {/* Progress Bar */}
+                                    <div className="mt-2 h-1.5 bg-white/90 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-green-900 rounded-full transition-all duration-500"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {/* Card Body - List DLH */}
+                                <div className="p-3 max-h-[280px] overflow-y-auto">
+                                    <div className="space-y-1.5">
+                                        {items.map(item => {
+                                            const sudahDinilai = item.nilai_wawancara !== null;
+                                            const isSelected = selectedDinas === item.id;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        setSelectedKategori(item.kategori);
+                                                        setSelectedDinas(item.id);
+                                                    }}
+                                                    className={`
+                                                        w-full px-3 py-2.5 rounded-xl text-left text-sm transition-all
+                                                        ${isSelected 
+                                                            ? 'bg-green-600 text-white shadow-md scale-[1.02]' 
+                                                            : sudahDinilai 
+                                                                ? 'bg-white/80 text-green-800 hover:bg-white border border-green-200' 
+                                                                : 'bg-yellow-40/80 text-orange-800 hover:bg-orange-100/80 border border-orange-200'
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            {sudahDinilai ? (
+                                                                <FaCheckCircle className={`flex-shrink-0 ${isSelected ? 'text-green-200' : 'text-green-500'}`} />
+                                                            ) : (
+                                                                <span className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-orange-400 bg-white" />
+                                                            )}
+                                                            <span className="truncate font-medium">
+                                                                {item.nama_dinas.replace('DLH ', '').replace('Dinas Lingkungan Hidup ', '')}
+                                                            </span>
+                                                        </div>
+                                                        {sudahDinilai && (
+                                                            <span className={`
+                                                                flex-shrink-0 text-xs font-bold px-2 py-0.5 rounded-full
+                                                                ${isSelected ? 'bg-white/30 text-white' : 'bg-green-100 text-green-700'}
+                                                            `}>
+                                                                {Number(item.nilai_wawancara).toFixed(0)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
+
+            {/* BAGIAN 2B: DROPDOWN ALTERNATIF (COLLAPSED) */}
+            <details className="bg-green-50/40 rounded-xl border border-green-200/50 overflow-hidden">
+                <summary className="px-4 py-3 cursor-pointer hover:bg-green-100/50 transition-colors">
+                    <span className="text-sm font-medium text-green-700 flex items-center gap-2">
+                        <FaFilter className="text-green-500" /> Filter Alternatif (Dropdown)
+                    </span>
+                </summary>
+                <div className="px-4 pb-4 pt-2">
+                    <div className="flex flex-wrap gap-4">
+                        {/* Dropdown 1: Jenis DLH */}
+                        <div className="w-64">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Jenis DLH</label>
+                            <select 
+                                value={selectedKategori}
+                                onChange={(e) => {
+                                    setSelectedKategori(e.target.value);
+                                    setSelectedDinas(null);
+                                }}
+                                className="w-full border border-green-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                            >
+                                {kategoriOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Dropdown 2: Pilih Dinas (conditional) */}
+                        {selectedKategori && (
+                            <div className="w-80">
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">Pilih Kab/Kota</label>
+                                <select 
+                                    value={selectedDinas || ''}
+                                    onChange={(e) => setSelectedDinas(e.target.value ? parseInt(e.target.value) : null)}
+                                    className="w-full border border-green-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                                >
+                                    <option value="">-- Pilih Kab/Kota --</option>
+                                    {filteredDinasOptions.map(dinas => (
+                                        <option key={dinas.id} value={dinas.id}>
+                                            {dinas.nama_dinas} {dinas.nilai_wawancara !== null ? `(${Number(dinas.nilai_wawancara).toFixed(0)})` : '(Belum dinilai)'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </details>
 
             {/* BAGIAN 3: FORM INPUT WAWANCARA - ALWAYS SHOW */}
             <div>
@@ -2252,22 +2855,40 @@ function TabWawancara() {
             </div>
 
             {/* BAGIAN 6: TOMBOL FINALISASI */}
-            {!isFinalized && wawancaraData.length > 0 && currentDinasData && (
+            {isFinalized ? (
+                <div className="flex justify-end">
+                    <FinalizedBadge />
+                </div>
+            ) : wawancaraData.length > 0 && (
                 <div className="flex justify-end">
                     <button
-                        onClick={handleFinalize}
-                        className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                        onClick={() => setShowConfirmModal(true)}
+                        disabled={progressStats.belumDinilai > 0}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                        title={progressStats.belumDinilai > 0 ? `Masih ada ${progressStats.belumDinilai} kandidat yang belum dinilai` : ''}
                     >
-                        Finalisasi Nilai Akhir
+                        <FaLock /> Finalisasi Nilai Akhir
                     </button>
+                    {progressStats.belumDinilai > 0 && (
+                        <span className="ml-3 text-sm text-orange-600 self-center">
+                            ⚠️ {progressStats.belumDinilai} kandidat belum dinilai
+                        </span>
+                    )}
                 </div>
             )}
 
-            {isFinalized && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                    <span className="text-green-700 font-medium">🔒 Data sudah difinalisasi</span>
-                </div>
-            )}
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                title="Finalisasi Hasil Wawancara"
+                message="Apakah Anda yakin ingin memfinalisasi hasil wawancara? Setelah difinalisasi, nilai akhir akan dihitung dan data tidak dapat diubah."
+                confirmText="Ya, Finalisasi"
+                cancelText="Batal"
+                type="warning"
+                onConfirm={handleFinalize}
+                onCancel={() => setShowConfirmModal(false)}
+                isLoading={isFinalizingLocal}
+            />
         </div>
     );
 }
@@ -2276,19 +2897,51 @@ function TabWawancara() {
 export default function PenilaianPage() {
     const [activeTab, setActiveTab] = useState('slhd');
     const [progressStats, setProgressStats] = useState<any>(null);
+    const [provinsiList, setProvinsiList] = useState<Province[]>([]);
+    const [submissions, setSubmissions] = useState<DinasSubmission[]>([]);
+    const [sharedDataLoading, setSharedDataLoading] = useState(true);
+    
+    // Track tab yang sudah pernah dibuka (untuk lazy loading)
+    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['slhd']));
+    
     const year = new Date().getFullYear();
 
-    // Fetch progress statistics
+    // Handle tab change dengan lazy loading
+    const handleTabChange = useCallback((tab: string) => {
+        setActiveTab(tab);
+        setVisitedTabs(prev => new Set([...prev, tab]));
+    }, []);
+
+    // Fungsi untuk refresh submissions saja (untuk update kelayakan administrasi)
+    const refreshSubmissions = useCallback(async () => {
+        try {
+            const submissionsRes = await axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`);
+            setSubmissions(submissionsRes.data?.data || []);
+        } catch (err) {
+            console.error('Error refreshing submissions:', err);
+        }
+    }, [year]);
+
+    // Fetch shared data ONCE (provinces + submissions + progress stats)
     useEffect(() => {
-        const fetchProgressStats = async () => {
+        const fetchSharedData = async () => {
             try {
-                const res = await axios.get(`/api/pusdatin/penilaian/progress-stats?year=${year}`);
-                setProgressStats(res.data.data);
+                setSharedDataLoading(true);
+                const [provincesRes, submissionsRes, progressRes] = await Promise.all([
+                    axios.get('/api/wilayah/provinces'),
+                    axios.get(`/api/pusdatin/penilaian/submissions?year=${year}`),
+                    axios.get(`/api/pusdatin/penilaian/progress-stats?year=${year}`)
+                ]);
+                setProvinsiList(provincesRes.data?.data || []);
+                setSubmissions(submissionsRes.data?.data || []);
+                setProgressStats(progressRes.data.data);
             } catch (err) {
-                console.error('Error fetching progress stats:', err);
+                console.error('Error fetching shared data:', err);
+            } finally {
+                setSharedDataLoading(false);
             }
         };
-        fetchProgressStats();
+        fetchSharedData();
     }, [year]);
 
     // Generate dynamic progress data
@@ -2374,23 +3027,60 @@ export default function PenilaianPage() {
     ];
 
     // RENDER KONTEN DINAMIS BERDASARKAN TAB AKTIF
+    // Menggunakan conditional rendering dengan cache - tab yang sudah pernah dibuka tetap di-mount (hidden)
     const renderContent = () => {
-        switch (activeTab) {
-            case 'slhd':
-                return <TabPenilaianSLHD />;
-            case 'penghargaan':
-                return <TabPenilaianPenghargaan />;
-            case 'validasi1':
-                return <TabValidasi1 />;
-            case 'validasi2':
-                return <TabValidasi2 />;
-            case 'peringkat':
-                return <TabPenetapanPeringkat />;
-            case 'wawancara':
-                return <TabWawancara />;
-            default:
-                return <TabPenilaianSLHD />;
+        if (sharedDataLoading) {
+            return (
+                <div className="flex items-center justify-center py-20">
+                    <FaSpinner className="animate-spin text-green-600 text-3xl" />
+                    <span className="ml-3 text-gray-600">Memuat data...</span>
+                </div>
+            );
         }
+        
+        return (
+            <>
+                {/* SLHD - selalu render karena default tab */}
+                <div className={activeTab === 'slhd' ? 'block' : 'hidden'}>
+                    <TabPenilaianSLHD provinsiList={provinsiList} submissions={submissions} onRefreshSubmissions={refreshSubmissions} />
+                </div>
+                
+                {/* Penghargaan - lazy load */}
+                {visitedTabs.has('penghargaan') && (
+                    <div className={activeTab === 'penghargaan' ? 'block' : 'hidden'}>
+                        <TabPenilaianPenghargaan provinsiList={provinsiList} submissions={submissions} />
+                    </div>
+                )}
+                
+                {/* Validasi 1 - lazy load */}
+                {visitedTabs.has('validasi1') && (
+                    <div className={activeTab === 'validasi1' ? 'block' : 'hidden'}>
+                        <TabValidasi1 provinsiList={provinsiList} submissions={submissions} />
+                    </div>
+                )}
+                
+                {/* Validasi 2 - lazy load */}
+                {visitedTabs.has('validasi2') && (
+                    <div className={activeTab === 'validasi2' ? 'block' : 'hidden'}>
+                        <TabValidasi2 provinsiList={provinsiList} submissions={submissions} />
+                    </div>
+                )}
+                
+                {/* Penetapan Peringkat - lazy load */}
+                {visitedTabs.has('peringkat') && (
+                    <div className={activeTab === 'peringkat' ? 'block' : 'hidden'}>
+                        <TabPenetapanPeringkat />
+                    </div>
+                )}
+                
+                {/* Wawancara - lazy load */}
+                {visitedTabs.has('wawancara') && (
+                    <div className={activeTab === 'wawancara' ? 'block' : 'hidden'}>
+                        <TabWawancara />
+                    </div>
+                )}
+            </>
+        );
     };
 
     const getTabTitle = () => {
@@ -2406,60 +3096,62 @@ export default function PenilaianPage() {
     };
 
     return (
-        <div className="space-y-6 pb-10 animate-fade-in">
-            
-            {/* BREADCRUMB */}
-            <div className="flex items-center text-sm text-gray-500">
-                <span className="text-green-600 cursor-pointer hover:underline">Penilaian</span>
-                <span className="mx-2">&gt;</span>
-                <span className="font-medium text-gray-700">Penilaian Kab/Kota</span>
-            </div>
+        <ToastProvider>
+            <div className="space-y-6 pb-10 animate-fade-in">
+                
+                {/* BREADCRUMB */}
+                <div className="flex items-center text-sm text-gray-500">
+                    <span className="text-green-600 cursor-pointer hover:underline">Penilaian</span>
+                    <span className="mx-2">&gt;</span>
+                    <span className="font-medium text-gray-700">Penilaian Kab/Kota</span>
+                </div>
 
-            {/* HEADER UTAMA */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                    Penilaian Nirwasita Tantra Kab/Kota
-                </h1>
-                <p className="text-sm text-gray-500">
-                    Atur Penilaian Nilai Nirwasita Tantra dari Dokumen-Dokumen Kab/Kota.
-                </p>
-            </div>
+                {/* HEADER UTAMA */}
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                        Penilaian Nirwasita Tantra 
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        Atur Penilaian Nilai Nirwasita Tantra dari Dokumen-Dokumen Kab/Kota.
+                    </p>
+                </div>
 
-            {/* PROGRESS CARDS - Ringkasan Progres */}
-            <div>
-                <h2 className="text-base font-bold text-gray-800 mb-4">Ringkasan Progres</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {progressData.map((item, index) => (
-                        <div 
-                            key={index}
-                            onClick={() => setActiveTab(item.tabValue)}
-                            className="cursor-pointer"
-                        >
-                            <ProgressCard
-                                stage={item.stage}
-                                progress={item.progress}
-                                detail={item.detail}
-                                isCompleted={item.isCompleted}
-                            />
-                        </div>
-                    ))}
+                {/* PROGRESS CARDS - Ringkasan Progres */}
+                <div>
+                    <h2 className="text-base font-bold text-gray-800 mb-4">Ringkasan Progres</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {progressData.map((item, index) => (
+                            <div 
+                                key={index}
+                                onClick={() => handleTabChange(item.tabValue)}
+                                className="cursor-pointer"
+                            >
+                                <ProgressCard
+                                    stage={item.stage}
+                                    progress={item.progress}
+                                    detail={item.detail}
+                                    isCompleted={item.isCompleted}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* DETAIL PENILAIAN & NAVIGASI */}
+                <div>
+                    <h2 className="text-base font-bold text-gray-800 mb-4">Detail Penilaian</h2>
+                    
+                    <InnerNav 
+                        tabs={tabs} 
+                        activeTab={activeTab} 
+                        onChange={handleTabChange} 
+                        activeColor="green"
+                        className="mb-6"
+                    />
+
+                    {renderContent()}
                 </div>
             </div>
-
-            {/* DETAIL PENILAIAN & NAVIGASI */}
-            <div>
-                <h2 className="text-base font-bold text-gray-800 mb-4">Detail Penilaian</h2>
-                
-                <InnerNav 
-                    tabs={tabs} 
-                    activeTab={activeTab} 
-                    onChange={setActiveTab} 
-                    activeColor="green"
-                    className="mb-6"
-                />
-
-                {renderContent()}
-            </div>
-        </div>
+        </ToastProvider>
     );
 }

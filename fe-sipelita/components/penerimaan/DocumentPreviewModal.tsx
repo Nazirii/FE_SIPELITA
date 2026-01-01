@@ -34,7 +34,7 @@ interface DocumentPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   submissionId: number;
-  documentType: 'buku1' | 'buku2';
+  documentType: 'buku1' | 'buku2' | 'buku3';
   onApprove: (submissionId: number, documentType: string, catatan?: string) => Promise<void>;
   onReject: (submissionId: number, documentType: string, catatan: string) => Promise<void>;
 }
@@ -65,7 +65,9 @@ export default function DocumentPreviewModal({
       try {
         const endpoint = documentType === 'buku1' 
           ? `/api/pusdatin/review/submission/${submissionId}/ringkasan-eksekutif`
-          : `/api/pusdatin/review/submission/${submissionId}/laporan-utama`;
+          : documentType === 'buku2'
+            ? `/api/pusdatin/review/submission/${submissionId}/laporan-utama`
+            : `/api/pusdatin/review/submission/${submissionId}/lampiran`;
         
         const res = await axios.get(endpoint);
         setDocData(res.data);
@@ -93,7 +95,8 @@ export default function DocumentPreviewModal({
     if (!docData) return;
     setProcessing(true);
     try {
-      await onApprove(submissionId, documentType === 'buku1' ? 'ringkasanEksekutif' : 'laporanUtama');
+      const docTypeApi = documentType === 'buku1' ? 'ringkasanEksekutif' : documentType === 'buku2' ? 'laporanUtama' : 'lampiran';
+      await onApprove(submissionId, docTypeApi);
       onClose();
     } catch (err) {
       console.error('Error approving:', err);
@@ -106,7 +109,8 @@ export default function DocumentPreviewModal({
     if (!docData || !catatan.trim()) return;
     setProcessing(true);
     try {
-      await onReject(submissionId, documentType === 'buku1' ? 'ringkasanEksekutif' : 'laporanUtama', catatan);
+      const docTypeApi = documentType === 'buku1' ? 'ringkasanEksekutif' : documentType === 'buku2' ? 'laporanUtama' : 'lampiran';
+      await onReject(submissionId, docTypeApi, catatan);
       onClose();
     } catch (err) {
       console.error('Error rejecting:', err);
@@ -118,14 +122,14 @@ export default function DocumentPreviewModal({
   // URL untuk preview di iframe (inline PDF) - public route
   const getPreviewUrl = () => {
     if (!submissionId) return null;
-    const docTypeParam = documentType === 'buku1' ? 'ringkasan-eksekutif' : 'laporan-utama';
+    const docTypeParam = documentType === 'buku1' ? 'ringkasan-eksekutif' : documentType === 'buku2' ? 'laporan-utama' : 'lampiran';
     return `${API_BASE_URL}/api/document/preview/${submissionId}/${docTypeParam}`;
   };
 
   // URL untuk download file - public route
   const getDownloadUrl = () => {
     if (!submissionId) return null;
-    const docTypeParam = documentType === 'buku1' ? 'ringkasan-eksekutif' : 'laporan-utama';
+    const docTypeParam = documentType === 'buku1' ? 'ringkasan-eksekutif' : documentType === 'buku2' ? 'laporan-utama' : 'lampiran';
     return `${API_BASE_URL}/api/document/download/${submissionId}/${docTypeParam}`;
   };
 
@@ -166,11 +170,11 @@ export default function DocumentPreviewModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-gray-700 rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl"
+            className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Content */}
-            <div className="flex h-[85vh]">
+            <div className="flex h-[85vh] bg-gray-200">
               {/* Left Panel - Document Info (White Card) */}
               <div className="w-72 bg-white rounded-2xl m-4 p-6 flex flex-col">
                 {loading ? (
@@ -254,9 +258,9 @@ export default function DocumentPreviewModal({
               </div>
 
               {/* Right Panel - Document Preview */}
-              <div className="flex-1 flex flex-col pr-4 py-4">
+              <div className="flex-1 flex flex-col pr-4 py-4 bg-gray-200">
                 {/* Preview Area */}
-                <div className="flex-1 bg-gray-200 rounded-xl overflow-hidden">
+                <div className="flex-1  rounded-xl overflow-hidden">
                   {loading ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>

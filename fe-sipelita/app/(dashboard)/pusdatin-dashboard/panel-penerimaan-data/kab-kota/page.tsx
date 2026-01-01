@@ -85,9 +85,11 @@ export default function PenerimaanKabKotaPage() {
           tipologi: s.dinas?.tipologi || '-',
           buku_1: (s.buku_i && s.buku_i !== 'Belum Upload') ? 'Buku I' : null,
           buku_2: (s.buku_ii && s.buku_ii !== 'Belum Upload') ? 'Buku II' : null,
+          buku_3: (s.buku_iii && s.buku_iii !== 'Belum Upload') ? 'Buku III' : null,
           tabel_utama: (s.tabel_utama && s.tabel_utama !== 'Belum Upload') ? 'Tabel Utama' : null,
           buku_1_status: s.buku_i,
           buku_2_status: s.buku_ii,
+          buku_3_status: s.buku_iii,
         })));
         
         setTotalPages(res.data?.last_page || 1);
@@ -150,7 +152,7 @@ export default function PenerimaanKabKotaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+    <div className="min-h-screen  p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Penerimaan SLHD Kab/Kota</h1>

@@ -148,13 +148,17 @@ export default function PenerimaanDataPage() {
                 let jenis = doc.jenis_dokumen;
                 let href = `${basePath}/slhd-tabel-utama`;
 
-                if (doc.jenis_dokumen === 'Ringkasan Eksekutif') {
+                if (doc.jenis_dokumen === 'Ringkasan Eksekutif (Buku 1)') {
                     jenis = 'SLHD Buku I (Ringkasan Eksekutif)';
                     href = `${basePath}/slhd`;
-                } else if (doc.jenis_dokumen === 'Laporan Utama') {
+                } else if (doc.jenis_dokumen === 'Laporan Utama (Buku 2)') {
                     jenis = 'SLHD Buku II (Laporan Utama)';
                     href = `${basePath}/slhd`;
-                } else if (doc.jenis_dokumen === 'IKLH') {
+                } else if (doc.jenis_dokumen === 'Lampiran (Buku 3)') {
+                    jenis = 'SLHD Buku III (Lampiran)';
+                    href = `${basePath}/slhd`;
+                }
+                else if (doc.jenis_dokumen === 'IKLH') {
                     href = `${basePath}/iklh`;
                 }
 
@@ -219,6 +223,15 @@ export default function PenerimaanDataPage() {
             href: `${basePath}/slhd`,
             statusBadge: documentStatuses.find(d => d.jenis === 'SLHD Buku II (Laporan Utama)')?.uploaded 
                 ? <StatusBadge status={documentStatuses.find(d => d.jenis === 'SLHD Buku II (Laporan Utama)')?.status || ''} />
+                : null
+        },
+        { 
+            title: 'SLHD Buku III (Lampiran)', 
+            description: 'Unggah dokumen Laporan Utama SLHD', 
+            hideDownload: true, 
+            href: `${basePath}/slhd`,
+            statusBadge: documentStatuses.find(d => d.jenis === 'SLHD Buku III (Lampiran)')?.uploaded 
+                ? <StatusBadge status={documentStatuses.find(d => d.jenis === 'SLHD Buku III (Lampiran)')?.status || ''} />
                 : null
         },
         { 

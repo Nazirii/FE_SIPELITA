@@ -157,130 +157,130 @@ const chartOptions: ChartOptions<'line'> = {
 
 // --- KOMPONEN UTAMA ---
 
-export default function PerangkatAnalisisPage() {
-  const [selectedYear, setSelectedYear] = useState<string>('2024');
-  const [activeChart, setActiveChart] = useState<ChartType>('iklh'); 
+// export default function PerangkatAnalisisPage() {
+//   const [selectedYear, setSelectedYear] = useState<string>('2024');
+//   const [activeChart, setActiveChart] = useState<ChartType>('iklh'); 
 
-  const activeKpiData = kpiDataByYear[selectedYear] || kpiDataByYear['2024'];
+//   const activeKpiData = kpiDataByYear[selectedYear] || kpiDataByYear['2024'];
 
-  // Helper styling tombol
-  const getButtonClasses = (chartName: ChartType) => {
-    if (chartName === activeChart) {
-      return 'bg-green-600 text-white';
-    } else {
-      return 'bg-green-100 text-green-700 hover:bg-green-200';
-    }
-  };
+//   // Helper styling tombol
+//   const getButtonClasses = (chartName: ChartType) => {
+//     if (chartName === activeChart) {
+//       return 'bg-green-600 text-white';
+//     } else {
+//       return 'bg-green-100 text-green-700 hover:bg-green-200';
+//     }
+//   };
 
-  // Helper data chart aktif
-  const getActiveChartData = (): ChartData<'line'> => {
-    switch (activeChart) {
-      case 'iklh': return iklhData;
-      case 'penghargaan': return penghargaanData;
-      case 'slhd': return slhdData; // Updated to return SLHD data
-      default: return iklhData;
-    }
-  };
+//   // Helper data chart aktif
+//   const getActiveChartData = (): ChartData<'line'> => {
+//     switch (activeChart) {
+//       case 'iklh': return iklhData;
+//       case 'penghargaan': return penghargaanData;
+//       case 'slhd': return slhdData; // Updated to return SLHD data
+//       default: return iklhData;
+//     }
+//   };
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header Halaman */}
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-gray-800">Perangkat Analisis</h1>
-        <p className="text-lg text-gray-500 mt-1">
-          Pantau Ringkasan Kinerja dan Progres Penilaian Nirwasita Tantra
-        </p>
-      </div>
+//   return (
+//     <div className="max-w-7xl mx-auto">
+//       {/* Header Halaman */}
+//       <div className="mb-6">
+//         <h1 className="text-4xl font-bold text-gray-800">Perangkat Analisis</h1>
+//         <p className="text-lg text-gray-500 mt-1">
+//           Pantau Ringkasan Kinerja dan Progres Penilaian Nirwasita Tantra
+//         </p>
+//       </div>
 
-      {/* Filter Tahun */}
-      <div className="flex items-center gap-4 mb-8">
-        <div>
-          <label htmlFor="tahun" className="block text-sm font-medium text-gray-700 mb-1">
-            Tahun
-          </label>
-          <select
-            id="tahun"
-            className="p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-          >
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-          </select>
-        </div>
-        <button className="self-end px-5 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition duration-150">
-          Filter
-        </button>
-      </div>
+//       {/* Filter Tahun */}
+//       <div className="flex items-center gap-4 mb-8">
+//         <div>
+//           <label htmlFor="tahun" className="block text-sm font-medium text-gray-700 mb-1">
+//             Tahun
+//           </label>
+//           <select
+//             id="tahun"
+//             className="p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900"
+//             value={selectedYear}
+//             onChange={(e) => setSelectedYear(e.target.value)}
+//           >
+//             <option value="2024">2024</option>
+//             <option value="2023">2023</option>
+//             <option value="2022">2022</option>
+//           </select>
+//         </div>
+//         <button className="self-end px-5 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition duration-150">
+//           Filter
+//         </button>
+//       </div>
 
-      {/* Kartu KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: Rata-rata IKLH */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-500">Rata-rata IKLH Tahun Ini</p>
-          <p className="text-4xl font-bold text-gray-800 mt-2">{activeKpiData.iklh}</p>
-        </div>
+//       {/* Kartu KPI */}
+//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+//         {/* Card 1: Rata-rata IKLH */}
+//         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+//           <p className="text-sm font-medium text-gray-500">Rata-rata IKLH Tahun Ini</p>
+//           <p className="text-4xl font-bold text-gray-800 mt-2">{activeKpiData.iklh}</p>
+//         </div>
 
-        {/* Card 2: Total Skor Penghargaan */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-500">Total Skor Penghargaan</p>
-          <p className="text-4xl font-bold text-gray-800 mt-2">{activeKpiData.penghargaan}</p>
-        </div>
+//         {/* Card 2: Total Skor Penghargaan */}
+//         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+//           <p className="text-sm font-medium text-gray-500">Total Skor Penghargaan</p>
+//           <p className="text-4xl font-bold text-gray-800 mt-2">{activeKpiData.penghargaan}</p>
+//         </div>
 
-        {/* Card 3: Jumlah Dokumen */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-500">Jumlah Dokumen Lengkap</p>
-          <p className="text-4xl font-bold text-gray-800 mt-2">
-            {activeKpiData.dokumenLengkap}
-            <span className="text-3xl text-gray-400">/{activeKpiData.dokumenTotal}</span>
-          </p>
-        </div>
+//         {/* Card 3: Jumlah Dokumen */}
+//         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+//           <p className="text-sm font-medium text-gray-500">Jumlah Dokumen Lengkap</p>
+//           <p className="text-4xl font-bold text-gray-800 mt-2">
+//             {activeKpiData.dokumenLengkap}
+//             <span className="text-3xl text-gray-400">/{activeKpiData.dokumenTotal}</span>
+//           </p>
+//         </div>
 
-        {/* Card 4: Status Validasi */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <p className="text-sm font-medium text-gray-500">Status Validasi</p>
-          <p className={`text-4xl font-bold ${activeKpiData.statusColor} mt-2`}>
-            {activeKpiData.status}
-          </p>
-        </div>
-      </div>
+//         {/* Card 4: Status Validasi */}
+//         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+//           <p className="text-sm font-medium text-gray-500">Status Validasi</p>
+//           <p className={`text-4xl font-bold ${activeKpiData.statusColor} mt-2`}>
+//             {activeKpiData.status}
+//           </p>
+//         </div>
+//       </div>
 
-      {/* Sesi Chart */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 p-6">
-        {/* Header Chart */}
-        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">Tren Kinerja</h2>
-            <p className="text-sm text-gray-500">2020-2024</p>
-          </div>
-          <div className="flex space-x-2 mt-4 md:mt-0">
-            <button 
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('iklh')}`}
-              onClick={() => setActiveChart('iklh')}
-            >
-              IKLH
-            </button>
-            <button 
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('penghargaan')}`}
-              onClick={() => setActiveChart('penghargaan')}
-            >
-              Penghargaan
-            </button>
-            <button 
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('slhd')}`}
-              onClick={() => setActiveChart('slhd')}
-            >
-              SLHD
-            </button>
-          </div>
-        </div>
+//       {/* Sesi Chart */}
+//       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 p-6">
+//         {/* Header Chart */}
+//         <div className="flex flex-col md:flex-row justify-between md:items-center mb-4">
+//           <div>
+//             <h2 className="text-xl font-semibold text-gray-800">Tren Kinerja</h2>
+//             <p className="text-sm text-gray-500">2020-2024</p>
+//           </div>
+//           <div className="flex space-x-2 mt-4 md:mt-0">
+//             <button 
+//               className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('iklh')}`}
+//               onClick={() => setActiveChart('iklh')}
+//             >
+//               IKLH
+//             </button>
+//             <button 
+//               className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('penghargaan')}`}
+//               onClick={() => setActiveChart('penghargaan')}
+//             >
+//               Penghargaan
+//             </button>
+//             <button 
+//               className={`px-3 py-1 rounded-full text-xs font-semibold ${getButtonClasses('slhd')}`}
+//               onClick={() => setActiveChart('slhd')}
+//             >
+//               SLHD
+//             </button>
+//           </div>
+//         </div>
 
-        {/* Kontainer Canvas Chart */}
-        <div className="h-80">
-          <Line data={getActiveChartData()} options={chartOptions} />
-        </div>
-      </div>
-    </div>
-  );
-}
+//         {/* Kontainer Canvas Chart */}
+//         <div className="h-80">
+//           <Line data={getActiveChartData()} options={chartOptions} />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }

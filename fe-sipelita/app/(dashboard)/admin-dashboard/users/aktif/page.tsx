@@ -29,7 +29,7 @@ const statCardColors = [
 ];
 
 // Komponen StatCard dengan Progress Bar
-const ProgressStatCard = ({ title, current, max, color = 'blue' }: { title: string; current: number; max: number; color?: 'blue' | 'green' | 'red' }) => {
+const ProgressStatCard = ({ title, current, max, color = 'green' }: { title: string; current: number; max: number; color?: 'blue' | 'green' | 'red' }) => {
   const percentage = Math.min(100, (current / max) * 100);
   const colorClasses = {
     blue: { bar: 'bg-blue-500', border: 'border-blue-300', text: 'text-blue-600' },
@@ -40,10 +40,10 @@ const ProgressStatCard = ({ title, current, max, color = 'blue' }: { title: stri
   const selectedColors = colorClasses[color];
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border ${selectedColors.border} p-6 h-full flex flex-col`}>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex flex-col">
       <div>
-        <h3 className={`text-sm font-medium ${selectedColors.text} mb-1`}>{title}</h3>
-        <p className="text-2xl font-bold text-gray-900">{current} / {max}</p>
+        <h3 className="text-sm font-medium text-gray-600 mb-1">{title}</h3>
+        <p className="text-3xl font-bold text-gray-900">{current} / {max}</p>
       </div>
       <div className="mt-auto">
         <div className="mt-3 w-full bg-gray-200 rounded-full h-2.5">
@@ -251,15 +251,15 @@ export default function UsersAktifPage() {
   const mainTabs = [
     { label: 'DLH', value: 'dlh' },
     { label: 'Pusdatin', value: 'pusdatin' },
-    { label: 'Admin', value: 'admin' },
+    // { label: 'Admin', value: 'admin' },
   ];
 
   const isDlhTabActive = activeTab === 'dlh';
 
   // Stats Data
   const statsData = [
-    { title: 'Total DLH Provinsi Aktif', value: stats.dlhProvinsi, max: 38, type: 'progress', color: 'blue' as const, link: '#dlh' },
-    { title: 'Total DLH Kab/Kota Aktif', value: stats.dlhKabKota, max: 538, type: 'progress', color: 'blue' as const, link: '#dlh' },
+    { title: 'Total DLH Provinsi Aktif', value: stats.dlhProvinsi, max: 38, type: 'progress', color: 'green' as const, link: '#dlh' },
+    { title: 'Total DLH Kab/Kota Aktif', value: stats.dlhKabKota, max: 538, type: 'progress', color: 'green' as const, link: '#dlh' },
     { title: 'Total Pusdatin Aktif', value: stats.pusdatin, type: 'simple', color: 'green' as const, link: '#pusdatin' },
   ];
 
@@ -300,9 +300,9 @@ export default function UsersAktifPage() {
                 color={stat.color}
               />
             ) : (
-              <div className={`bg-white rounded-xl shadow-sm border ${statCardColors[index].border} p-6 h-full flex flex-col justify-center`}>
-                <h3 className={`text-sm font-medium ${statCardColors[index].titleColor} mb-1`}>{stat.title}</h3>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex flex-col justify-center">
+                <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.title}</h3>
+                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
               </div>
             )}
           </Link>

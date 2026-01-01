@@ -58,124 +58,126 @@ export default function UserTable({
   const hasActions = (onApprove && onReject) || onDelete;
 
   return (
-    <div>
-      <div className="px-6 py-3">
-        <h3 className="text-xl font-bold text-gray-800 pl-0 -ml-4">Tabel User</h3>
-      </div>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            
-            <thead className={getRoleTheme(users[0]?.role || 'dlh').headerBg}>
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Email</th>
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Role</th>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          
+          <thead className="bg-green-100">
+            <tr>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">NO</th>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Email</th>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Role</th>
+              {showLocation && (
+                <>
+                  <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Provinsi</th>
+                  {shouldShowRegencyColumn && (
+                    <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Kab/Kota</th>
+                  )}
+                </>
+              )}
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Status</th>
+              
+              {/* Tampilkan header Aksi jika ada action handler */}
+              {hasActions && (
+                <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Aksi</th>
+              )}
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {users.map((user, index) => (
+              <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                
+                <td className="py-4 px-6 text-sm text-gray-900">
+                  {index + 1}
+                </td>
+                <td className="py-4 px-6 text-sm text-gray-900">
+                  {user.email}
+                </td>
+                <td className="py-4 px-6 text-sm">
+                  <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
+                    user.role.toLowerCase() === 'pusdatin' 
+                      ? 'bg-green-100 text-green-700'
+                      : user.role.toLowerCase() === 'admin'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {getDisplayRole(user)}
+                  </span>
+                </td>
                 {showLocation && (
                   <>
-                    <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Provinsi</th>
-                    {shouldShowRegencyColumn && (
-                      <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Kab/Kota</th>
+                    <td className="py-4 px-6 text-sm text-gray-700">
+                      {user.province ?? '-'}
+                    </td>
+                    {!isDlhProvinsi(user) && shouldShowRegencyColumn && (
+                      <td className="py-4 px-6 text-sm text-gray-700">
+                        {user.regency ?? '-'}
+                      </td>
                     )}
                   </>
                 )}
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Status</th>
-                
-                {/* Tampilkan header Aksi jika ada action handler */}
+                <td className="py-4 px-6 text-sm">
+                  <span
+                    className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
+                      user.status === 'aktif'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {user.status === 'aktif' ? 'Aktif' : 'Pending'}
+                  </span>
+                </td>
+
                 {hasActions && (
-                  <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Aksi</th>
+                  <td className="py-4 px-6 text-sm">
+                    <div className="flex gap-2 items-center">
+                      
+                      {/* Kasus Approve/Reject (Halaman Pending) */}
+                      {(onApprove && onReject) && (
+                        <>
+                          <button
+                            onClick={() => onApprove(user.id)}
+                            disabled={isSubmitting} 
+                            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            title="Terima User"
+                          >
+                            <FaCheck className="text-xs" />
+                            Terima
+                          </button>
+                          
+                          <button
+                            onClick={() => onReject(user.id)}
+                            disabled={isSubmitting} 
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            title="Tolak User"
+                          >
+                            <FaTimes className="text-xs" />
+                            Tolak
+                          </button>
+                        </>
+                      )}
+
+                      {/* Kasus Delete Only (Halaman Settings/List) */}
+                      {onDelete && (
+                         <button
+                            onClick={() => onDelete(user.id)}
+                            disabled={isSubmitting} 
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            title="Hapus User"
+                          >
+                            <FaTrash className="text-xs" />
+                            Hapus
+                          </button>
+                      )}
+
+                    </div>
+                  </td>
                 )}
               </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-200">
-              {users.map((user) => {
-                const theme = getRoleTheme(user.role);
-                return (
-                  <tr key={user.id} className="hover:bg-gray-100">
-                    
-                    <td className={`${theme.rowBg} py-4 px-4 text-sm text-gray-700`}>
-                      {user.email}
-                    </td>
-                    <td className={`${theme.rowBg} py-4 px-4 text-sm font-medium`}>
-                      <span className={theme.textColor}>
-                        {getDisplayRole(user)}
-                      </span>
-                    </td>
-                    {showLocation && (
-                      <>
-                        <td className={`${theme.rowBg} py-4 px-4 text-sm text-gray-700`}>
-                          {user.province ?? '-'}
-                        </td>
-                        {!isDlhProvinsi(user) && shouldShowRegencyColumn && (
-                          <td className={`${theme.rowBg} py-4 px-4 text-sm text-gray-700`}>
-                            {user.regency ?? '-'}
-                          </td>
-                        )}
-                      </>
-                    )}
-                    <td className={`${theme.rowBg} py-4 px-4 text-sm`}>
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
-                          user.status === 'aktif'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {user.status === 'aktif' ? 'Aktif' : 'Pending'}
-                      </span>
-                    </td>
-
-                    {hasActions && (
-                      <td className={`${theme.rowBg} py-4 px-4 text-sm`}>
-                        <div className="flex space-x-4 items-center">
-                          
-                          {/* Kasus Approve/Reject (Halaman Pending) */}
-                          {(onApprove && onReject) && (
-                            <>
-                              <button
-                                onClick={() => onApprove(user.id)}
-                                disabled={isSubmitting} 
-                                className="text-green-600 hover:text-green-900 flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Terima User"
-                              >
-                                <FaCheck className="text-base" />
-                                <span className="text-sm">Terima</span>
-                              </button>
-                              
-                              <button
-                                onClick={() => onReject(user.id)}
-                                disabled={isSubmitting} 
-                                className="text-red-600 hover:text-red-900 flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Tolak User"
-                              >
-                                <FaTimes className="text-base" />
-                                <span className="text-sm">Tolak</span>
-                              </button>
-                            </>
-                          )}
-
-                          {/* Kasus Delete Only (Halaman Settings/List) */}
-                          {onDelete && (
-                             <button
-                                onClick={() => onDelete(user.id)}
-                                disabled={isSubmitting} 
-                                className="text-red-600 hover:text-red-900 flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white px-3 py-1 rounded border border-red-200 hover:bg-red-50"
-                                title="Hapus User"
-                              >
-                                <FaTrash className="text-sm" />
-                                <span className="text-sm">Hapus Akun</span>
-                              </button>
-                          )}
-
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

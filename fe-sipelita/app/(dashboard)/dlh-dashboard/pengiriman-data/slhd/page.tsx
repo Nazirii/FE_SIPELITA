@@ -131,23 +131,23 @@ const UploadModal = ({ isOpen, onClose, document, onUploadSuccess }: UploadModal
     if (!isOpen || !document) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-white">
-                        {document.uploaded ? 'Ganti File' : 'Unggah File'}
-                    </h3>
-                    <button onClick={resetAndClose} className="text-white/80 hover:text-white transition-colors">
+                <div className="bg-green-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                            {document.uploaded ? 'Ganti File' : 'Unggah File'}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">{document.title}</p>
+                    </div>
+                    <button onClick={resetAndClose} className="text-gray-600 hover:text-gray-900 transition-colors">
                         <XIcon />
                     </button>
                 </div>
                 
                 {/* Body */}
                 <div className="p-6">
-                    <p className="text-gray-600 mb-4">
-                        <span className="font-semibold text-gray-800">{document.title}</span>
-                    </p>
                     
                     {/* Drop Zone */}
                     <div
@@ -202,10 +202,10 @@ const UploadModal = ({ isOpen, onClose, document, onUploadSuccess }: UploadModal
                 </div>
                 
                 {/* Footer */}
-                <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                <div className="bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
                     <button
                         onClick={resetAndClose}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="px-4 py-2 text-gray-700 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
                     >
                         Batal
                     </button>
@@ -303,7 +303,8 @@ const PreviewModal = ({ isOpen, onClose, document, submissionId, onFinalize }: P
             // Map apiEndpoint ke finalize type
             const typeMap: Record<string, string> = {
                 'ringkasan-eksekutif': 'ringkasanEksekutif',
-                'laporan-utama': 'laporanUtama'
+                'laporan-utama': 'laporanUtama',
+                'lampiran': 'lampiran'
             };
             const finalizeType = typeMap[document.apiEndpoint];
             
@@ -431,7 +432,7 @@ const PreviewModal = ({ isOpen, onClose, document, submissionId, onFinalize }: P
                 
                 {/* Alert Messages */}
                 {error && (
-                    <div className="bg-red-50 px-6 py-3 border-b flex-shrink-0">
+                    <div className="bg-red-600 px-6 py-3 border-b flex-shrink-0 ">
                         <p className="text-sm text-red-600">{error}</p>
                     </div>
                 )}
@@ -636,6 +637,17 @@ export default function SLHDPage() {
             ukuran_file: null,
             catatan_admin: null
         },
+        { 
+            key: 'lampiran',
+            title: 'Buku III (Lampiran)', 
+            apiEndpoint: 'lampiran',
+            uploaded: false,
+            status: null,
+            tanggal_upload: null,
+            nama_file: null,
+            ukuran_file: null,
+            catatan_admin: null
+        },
     ]);
     
     // Modal states
@@ -658,8 +670,9 @@ export default function SLHDPage() {
             setDocuments(prev => prev.map(doc => {
                 // Map key to jenis_dokumen
                 const jenisMap: Record<string, string> = {
-                    'ringkasan_eksekutif': 'Ringkasan Eksekutif',
-                    'laporan_utama': 'Laporan Utama',
+                    'ringkasan_eksekutif': 'Ringkasan Eksekutif (Buku 1)',
+                    'laporan_utama': 'Laporan Utama (Buku 2)',
+                    'lampiran': 'Lampiran (Buku 3)',
                 };
                 
                 const apiDoc = data.find((d: any) => d.jenis_dokumen === jenisMap[doc.key]);
@@ -704,7 +717,8 @@ export default function SLHDPage() {
                 <div className="animate-pulse space-y-6">
                     <div className="h-10 bg-gray-200 rounded w-1/3"></div>
                     <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="h-48 bg-gray-200 rounded-xl"></div>
                         <div className="h-48 bg-gray-200 rounded-xl"></div>
                         <div className="h-48 bg-gray-200 rounded-xl"></div>
                     </div>
@@ -731,7 +745,7 @@ export default function SLHDPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 {documents.map((doc) => (
                     <SlhdUploadCard 
                         key={doc.key}

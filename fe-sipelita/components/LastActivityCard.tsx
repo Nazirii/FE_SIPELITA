@@ -41,95 +41,89 @@ export default function LastActivityCard({
   const themeColors = getThemeColors();
 
   return (
-    <div>
-      <div className="px-6 py-3">
-        <h3 className="text-xl font-bold text-gray-800 pl-0 -ml-4">Aktivitas Terakhir</h3>
-      </div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-green-100">
+            <tr>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider w-32">Waktu</th>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">User</th>
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider w-32">Role</th>
+              {showDlhSpecificColumns && (
+                <>
+                  <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Jenis DLH</th>
+                  <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Provinsi</th>
+                  <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Kab/Kota</th>
+                </>
+              )}
+              <th className="py-4 px-6 text-left text-xs font-semibold text-gray-800 uppercase tracking-wider">Aksi</th>
+            </tr>
+          </thead>
 
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className={themeColors.header}>
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-32">Waktu</th>
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">User</th>
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-32">Role</th>
-                {showDlhSpecificColumns && (
-                  <>
-                    <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Jenis DLH</th>
-                    <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Provinsi</th>
-                    <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Kab/Kota</th>
-                  </>
-                )}
-                <th className="py-3 px-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Aksi</th>
-              </tr>
-            </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {logs.length > 0 ? (
+              logs.map((log) => (
+                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                  {/* Waktu */}
+                  <td className="py-4 px-6 text-xs text-gray-500 font-medium">
+                    {log.time}
+                  </td>
 
-            <tbody className="divide-y divide-gray-200">
-              {logs.length > 0 ? (
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Waktu */}
-                    <td className={`${themeColors.row} py-4 px-4 text-xs text-gray-500 font-medium`}>
-                      {log.time}
-                    </td>
+                  {/* User */}
+                  <td className="py-4 px-6 text-sm text-gray-900 font-semibold">
+                    {log.user}
+                  </td>
 
-                    {/* User */}
-                    <td className={`${themeColors.row} py-4 px-4 text-sm text-gray-800 font-semibold`}>
-                      {log.user}
-                    </td>
+                  {/* Role + Icon */}
+                  <td className="py-4 px-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      {getRoleIcon(log.role)}
+                      <span className={`font-medium text-xs uppercase ${getRoleColor(log.role)}`}>
+                        {log.role}
+                      </span>
+                    </div>
+                  </td>
 
-                    {/* Role + Icon */}
-                    <td className={`${themeColors.row} py-4 px-4 text-sm`}>
-                      <div className="flex items-center gap-2">
-                        {getRoleIcon(log.role)}
-                        <span className={`font-medium text-xs uppercase ${getRoleColor(log.role)}`}>
-                          {log.role}
+                  {/* Kolom Spesifik DLH */}
+                  {showDlhSpecificColumns && (
+                    <>
+                      <td className="py-4 px-6 text-sm text-gray-700">
+                        {log.jenis_dlh === 'provinsi' ? 'Provinsi' : 
+                         log.jenis_dlh === 'kabkota' ? 'Kab/Kota' : '-'}
+                      </td>
+                      <td className="py-4 px-6 text-sm text-gray-700">
+                        {log.province_name || '-'}
+                      </td>
+                      <td className="py-4 px-6 text-sm text-gray-700">
+                        {log.regency_name || '-'}
+                      </td>
+                    </>
+                  )}
+
+                  {/* Aksi & Target */}
+                  <td className="py-4 px-6 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-gray-900 font-medium">
+                        {log.action}
+                      </span>
+                      {log.target && log.target !== '-' && (
+                        <span className="text-xs text-gray-500 mt-0.5 italic">
+                          Target: {log.target}
                         </span>
-                      </div>
-                    </td>
-
-                    {/* Kolom Spesifik DLH */}
-                    {showDlhSpecificColumns && (
-                      <>
-                        <td className={`${themeColors.row} py-4 px-4 text-sm text-gray-700`}>
-                          {log.jenis_dlh === 'provinsi' ? 'Provinsi' : 
-                           log.jenis_dlh === 'kabkota' ? 'Kab/Kota' : '-'}
-                        </td>
-                        <td className={`${themeColors.row} py-4 px-4 text-sm text-gray-700`}>
-                          {log.province_name || '-'}
-                        </td>
-                        <td className={`${themeColors.row} py-4 px-4 text-sm text-gray-700`}>
-                          {log.regency_name || '-'}
-                        </td>
-                      </>
-                    )}
-
-                    {/* Aksi & Target */}
-                    <td className={`${themeColors.row} py-4 px-4 text-sm`}>
-                      <div className="flex flex-col">
-                        <span className="text-gray-800 font-medium">
-                          {log.action}
-                        </span>
-                        {log.target && log.target !== '-' && (
-                          <span className="text-xs text-gray-500 mt-0.5 italic">
-                            Target: {log.target}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={showDlhSpecificColumns ? 7 : 4} className="py-8 text-center text-gray-500">
-                    Belum ada aktivitas tercatat.
+                      )}
+                    </div>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={showDlhSpecificColumns ? 7 : 4} className="py-8 text-center text-gray-500">
+                  Belum ada aktivitas tercatat.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -50,15 +50,16 @@ export default function Header() {
               dropdown: [
                 { name: 'Daftar User Aktif', href: `${baseHref}/users/aktif` },
                 { name: 'Persetujuan Registrasi', href: `${baseHref}/users/pending` },
-                { name: 'Log Aktivitas Sistem', href: `${baseHref}/users/logs` },
+                { name: 'Log Aktivitas ', href: `${baseHref}/users/logs` },
               ] 
             },
+            { name: 'Pengaturan Deadline', href: `${baseHref}/pengaturan-deadline` },
             { name: 'Kelola Akun Pusdatin', href: `${baseHref}/settings` },
         ];
     } else if (userRoleName === 'pusdatin') {
         navLinks = [
             { name: 'Beranda', href: baseHref },
-            { name: 'Pengaturan Deadline', href: `${baseHref}/pengaturan-deadline/penerimaan-data` },
+            // { name: 'Pengaturan Deadline', href: `${baseHref}/pengaturan-deadline/penerimaan-data` },
             { 
               name: 'Panel Penerimaan Data', 
               href: `${baseHref}/panel-penerimaan-data`, 
@@ -71,8 +72,8 @@ export default function Header() {
               name: 'Panel Penilaian', 
               href: `${baseHref}/penilaian`, 
               dropdown: [
-                { name: 'Penilaian Kab/kota', href: `${baseHref}/penilaian/kab-kota` },
-                { name: 'Penilaian Provinsi', href: `${baseHref}/penilaian/provinsi` }
+                { name: 'Penilaian Nirwasita tantra', href: `${baseHref}/penilaian/kab-kota` },
+                // { name: 'Penilaian Provinsi', href: `${baseHref}/penilaian/provinsi` }
               ]
             },
         ];
@@ -92,10 +93,10 @@ export default function Header() {
             href: `${baseHref}/penilaian`, 
             dropdown: [
               { name: 'Hasil Penilaian', href: `${baseHref}/penilaian/hasil-penilaian` },
-              { name: 'Tabel rekap kab/kota', href: `${baseHref}/penilaian/tabel-rekap` },
+              // { name: 'Tabel rekap kab/kota', href: `${baseHref}/penilaian/tabel-rekap` },
             ]
           },
-          { name: 'Perangkat Analisis', href: `${baseHref}/perangkat-analisis` },
+          // { name: 'Perangkat Analisis', href: `${baseHref}/perangkat-analisis` },
       ];
     }
 
@@ -183,12 +184,12 @@ export default function Header() {
             {isProfileOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
                 <div className="py-1">
-                  <Link
+                  {/* <Link
                     href="/profile"
                     className="block px-4 py-2 text-sm text-gray-800 hover:bg-[#00A86B]/10 hover:text-[#00A86B] transition-colors"
                   >
                     Profil
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={logout}
                     className="w-full text-left block px-4 py-2 text-sm text-gray-800 hover:bg-[#00A86B]/10 hover:text-[#00A86B] transition-colors"

@@ -1,77 +1,97 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import StatCard from '@/components/StatCard';
-import ProgressCard from '@/components/ProgressCard';
-import NotificationCard from '@/components/NotificationCard';
-import ActivityTable, { Activity } from '@/components/ActivityTable';
 import { useState, useEffect } from 'react';
 import axios from '@/lib/axios';
 
-interface Stats {
-  total_dlh: number;
-  buku1_upload: number;
-  buku1_approved: number;
-  buku2_upload: number;
-  buku2_approved: number;
-  iklh_upload: number;
-  iklh_approved: number;
-  avg_nilai_slhd: string;
-}
-
-interface ProgressStage {
-  stage: string;
-  status: string;
-  detail: string;
-  is_completed: boolean;
-  is_active: boolean;
-  progress: number;
-}
-
-interface Notifications {
-  announcement?: string | null;
-  notification?: string | null;
+interface DashboardData {
+  summary: {
+    total_dlh: number;
+    total_pengajuan_buku1: number;
+    total_pengajuan_buku2: number;
+    total_pengajuan_iklh: number;
+    rata_rata_nilai: string | null;
+  };
+  tahap: {
+    aktif: string;
+    label: string;
+    pengumuman_terbuka: boolean;
+    keterangan: string;
+  };
+  progress: {
+    buku1: {
+      label: string;
+      approved: number;
+      finalized: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    buku2: {
+      label: string;
+      approved: number;
+      finalized: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    iklh: {
+      label: string;
+      approved: number;
+      finalized: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    slhd: {
+      label: string;
+      lolos: number;
+      total: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    penghargaan: {
+      label: string;
+      lolos: number;
+      total: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    validasi1: {
+      label: string;
+      lolos: number;
+      total: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    validasi2: {
+      label: string;
+      lolos: number;
+      total: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+    wawancara: {
+      label: string;
+      dinilai: number;
+      total: number;
+      percentage: number;
+      is_finalized: boolean;
+    };
+  };
 }
 
 export default function PusdatinDashboardPage() {
   const { user } = useAuth();
   const userName = user?.name || 'Pusdatin';
   
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [progressStages, setProgressStages] = useState<ProgressStage[]>([]);
-  const [progressStats, setProgressStats] = useState<any>(null);
-  const [notifications, setNotifications] = useState<Notifications>({});
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const year = new Date().getFullYear();
 
   useEffect(() => {
-    // Fetch data dari multiple endpoints secara modular
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch semua data secara paralel
-        const [statsRes, progressRes, notifRes] = await Promise.allSettled([
-          axios.get('/api/pusdatin/dashboard/stats?year=' + year),
-          axios.get('/api/pusdatin/penilaian/progress-stats?year=' + year),
-          axios.get('/api/pusdatin/dashboard/notifications?year=' + year),
-        ]);
-
-        // Set stats
-        if (statsRes.status === 'fulfilled') {
-          setStats(statsRes.value.data);
-        }
-
-        // Set progress stats
-        if (progressRes.status === 'fulfilled') {
-          setProgressStats(progressRes.value.data.data);
-        }
-
-        // Set notifications
-        if (notifRes.status === 'fulfilled') {
-          setNotifications(notifRes.value.data);
-        }
-
+        const res = await axios.get(`/api/pusdatin/dashboard/stats?year=${year}`);
+        setDashboardData(res.data);
       } catch (error) {
         console.error("Gagal mengambil data dashboard:", error);
       } finally {
@@ -98,137 +118,229 @@ export default function PusdatinDashboardPage() {
     );
   }
 
-  // Mapping stats ke UI
-  const statCards = [
-    { title: 'Total Dinas Terdaftar', value: stats?.total_dlh || 0, type: 'number' },
-    { 
-      title: 'SLHD Buku 1', 
-      value: `${stats?.buku1_upload || 0} Upload\n${stats?.buku1_approved || 0} Approved`,
-      type: 'text'
-    },
-    { 
-      title: 'SLHD Buku 2', 
-      value: `${stats?.buku2_upload || 0} Upload\n${stats?.buku2_approved || 0} Approved`,
-      type: 'text'
-    },
-    { 
-      title: 'IKLH', 
-      value: `${stats?.iklh_upload || 0} Upload\n${stats?.iklh_approved || 0} Approved`,
-      type: 'text'
-    },
-    { 
-      title: 'Rata-rata Nilai SLHD', 
-      value: stats?.avg_nilai_slhd || 'Penilaian belum dimulai',
-      type: 'text'
-    },
-  ];
-
-  // Generate progress data - SAMA PERSIS dengan halaman penilaian
-  const progressData = progressStats ? [
-    {
-      stage: 'Tahap 1 (SLHD)',
-      progress: progressStats.total_dlh > 0 ? Math.round((progressStats.slhd.finalized / progressStats.total_dlh) * 100) : 0,
-      detail: progressStats.slhd.is_finalized 
-        ? `Difinalisasi - ${progressStats.slhd.finalized}/${progressStats.total_dlh} DLH`
-        : `Terbuka - ${progressStats.slhd.finalized}/${progressStats.total_dlh} DLH`,
-      isCompleted: progressStats.slhd.is_finalized,
-    },
-    {
-      stage: 'Tahap 2 (Penghargaan)',
-      progress: progressStats.penghargaan.is_finalized ? 100 : 0,
-      detail: progressStats.slhd.is_finalized
-        ? (progressStats.penghargaan.is_finalized 
-            ? `Difinalisasi - ${progressStats.penghargaan.finalized} DLH Lulus`
-            : `Terbuka - ${progressStats.penghargaan.finalized}/${progressStats.total_dlh} DLH`)
-        : 'Menunggu SLHD',
-      isCompleted: progressStats.penghargaan.is_finalized,
-    },
-    {
-      stage: 'Tahap 3 (Validasi 1)',
-      progress: progressStats.validasi1.is_finalized ? 100 : 0,
-      detail: progressStats.penghargaan.is_finalized
-        ? (progressStats.validasi1.is_finalized
-            ? `Difinalisasi - Lulus: ${progressStats.validasi1.lolos}/${progressStats.validasi1.processed} DLH`
-            : `memproses ${progressStats.validasi1.processed} DLH`)
-        : 'Menunggu Penghargaan',
-      isCompleted: progressStats.validasi1.is_finalized,
-    },
-    {
-      stage: 'Tahap 4 (Validasi 2)',
-      progress: progressStats.validasi2.is_finalized ? 100 : (progressStats.validasi2.processed > 0 ? Math.round((progressStats.validasi2.checked / progressStats.validasi2.processed) * 100) : 0),
-      detail: progressStats.validasi1.is_finalized
-        ? (progressStats.validasi2.is_finalized
-            ? `Difinalisasi - Lulus: ${progressStats.validasi2.lolos}/${progressStats.validasi2.processed} DLH`
-            : `memproses: ${progressStats.validasi2.checked}/${progressStats.validasi2.processed} DLH`)
-        : 'Menunggu Validasi 1',
-      isCompleted: progressStats.validasi2.is_finalized,
-    },
-    {
-      stage: 'Tahap 5 (Wawancara)',
-      progress: progressStats.wawancara.is_finalized ? 100 : (progressStats.wawancara.with_nilai > 0 ? Math.round((progressStats.wawancara.with_nilai / progressStats.validasi2.lolos) * 100) : 0),
-      detail: progressStats.validasi2.is_finalized
-        ? (progressStats.wawancara.is_finalized
-            ? `Selesai - ${progressStats.wawancara.processed} DLH Diproses`
-            : `memproses: ${progressStats.wawancara.with_nilai}/${progressStats.validasi2.lolos} DLH`)
-        : 'Menunggu Validasi 2',
-      isCompleted: progressStats.wawancara.is_finalized,
-    },
-  ] : [];
+  const data = dashboardData;
 
   // Tampilkan UI setelah data terisi
   return (
-    <div className="space-y-6 px-12 pb-10 animate-fade-in ">
+    <div className="space-y-6 px-8 pb-10 animate-fade-in">
       {/* Header */}
-      <header>
+      <header className="mb-2">
         <h1 className="text-2xl font-bold text-gray-900">
           Selamat Datang, {userName.toUpperCase()}
         </h1>
       </header>
 
       {/* Statistik Utama (5 Kartu) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {statCards.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.title}</h3>
-            <p className="text-2xl font-bold text-gray-800 whitespace-pre-line">
-              {stat.type === 'number' ? stat.value : stat.value}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      {/* Progress Cards & Notifikasi */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Kolom Kiri: Progress Cards (2 kolom dari 3) */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-base font-bold text-gray-800">Tahapan Penilaian</h2>
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-            {progressData.map((item, index) => (
-              <ProgressCard
-                key={index}
-                stage={item.stage}
-                progress={item.progress}
-                detail={item.detail}
-                isCompleted={item.isCompleted}
-              />
-            ))}
-          </div>
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+          <p className="text-sm text-gray-600 mb-2">Jumlah DLH Terdaftar</p>
+          <p className="text-3xl font-bold text-gray-900">{data?.summary.total_dlh || 0}</p>
         </div>
-
-        {/* Kolom Kanan: Notifikasi (1 kolom dari 3) - Panjang penuh */}
-        <div className="lg:col-span-1 space-y-4">
-          <h2 className="text-base font-bold text-gray-800">Notifikasi & Pengumuman</h2>
-          <NotificationCard
-            announcement={notifications.announcement || undefined}
-            notification={notifications.notification || undefined}
-          />
-          
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+          <p className="text-sm text-gray-600 mb-2">Total Pengajuan Ringkasan Eksekutif</p>
+          <p className="text-3xl font-bold text-gray-900">{data?.summary.total_pengajuan_buku1 || 0}</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+          <p className="text-sm text-gray-600 mb-2">Total Pengajuan Laporan Utama</p>
+          <p className="text-3xl font-bold text-gray-900">{data?.summary.total_pengajuan_buku2 || 0}</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+          <p className="text-sm text-gray-600 mb-2">Total Pengajuan IKLH</p>
+          <p className="text-3xl font-bold text-gray-900">{data?.summary.total_pengajuan_iklh || 0}</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-green-200 shadow-sm hover:shadow-md transition-all bg-gradient-to-br from-green-50 to-white">
+          <p className="text-sm text-green-700 mb-2">Status Tahap Saat Ini</p>
+          <p className="text-lg font-bold text-green-800">{data?.tahap.label || '-'}</p>
+          <p className="text-xs text-green-600 mt-1 line-clamp-2">{data?.tahap.keterangan || ''}</p>
         </div>
       </section>
 
+      {/* Progress Cards - 8 Cards dalam Grid 2x4 */}
+      <section>
+        <h2 className="text-base font-bold text-gray-900 mb-4">Progress Penilaian</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Ringkasan Eksekutif */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.buku1.label || 'Ringkasan Eksekutif'}</h3>
+              {data?.progress.buku1.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.buku1.approved || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.buku1.finalized || 0} Disetujui</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.buku1.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.buku1.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 2: Laporan Utama */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.buku2.label || 'Laporan Utama'}</h3>
+              {data?.progress.buku2.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.buku2.approved || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.buku2.finalized || 0} Disetujui</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.buku2.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.buku2.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 3: IKLH */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.iklh.label || 'IKLH'}</h3>
+              {data?.progress.iklh.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.iklh.approved || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.iklh.finalized || 0} Disetujui</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.iklh.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.iklh.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 4: Tahap 1 (SLHD) */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.slhd.label || 'Tahap 1 (SLHD)'}</h3>
+              {data?.progress.slhd.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.slhd.lolos || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.slhd.total || 0} Lolos</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.slhd.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.slhd.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 5: Tahap 2 (Penghargaan) */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.penghargaan.label || 'Tahap 2 (Penghargaan)'}</h3>
+              {data?.progress.penghargaan.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.penghargaan.lolos || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.penghargaan.total || 0} Lolos</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.penghargaan.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.penghargaan.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 6: Tahap 3 (Validasi 1) */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.validasi1.label || 'Tahap 3 (Validasi 1)'}</h3>
+              {data?.progress.validasi1.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.validasi1.lolos || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.validasi1.total || 0} Lolos</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.validasi1.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.validasi1.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 7: Tahap 4 (Validasi 2) */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.validasi2.label || 'Tahap 4 (Validasi 2)'}</h3>
+              {data?.progress.validasi2.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.validasi2.lolos || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.validasi2.total || 0} Lolos</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.validasi2.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.validasi2.percentage || 0}% Selesai</p>
+          </div>
+
+          {/* Card 8: Tahap 5 (Wawancara) */}
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">{data?.progress.wawancara.label || 'Tahap 5 (Wawancara)'}</h3>
+              {data?.progress.wawancara.is_finalized && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Finalized</span>
+              )}
+            </div>
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{data?.progress.wawancara.dinilai || 0}</span>
+              <span className="text-sm text-gray-500 mb-1">/ {data?.progress.wawancara.total || 0} Dinilai</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{width: `${data?.progress.wawancara.percentage || 0}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{data?.progress.wawancara.percentage || 0}% Selesai</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Aktivitas Terkini */}
+      <section className="mt-6">
+        <h2 className="text-base font-bold text-gray-900 mb-4">Aktivitas Terkini</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="text-center py-8 text-gray-500">
+            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="text-sm">Belum ada aktivitas terkini</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

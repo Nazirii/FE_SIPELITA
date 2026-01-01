@@ -5,6 +5,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/lib/axios';
 
+const TAHAP_ORDER: Record<string, number> = {
+  submission: 1,
+  penilaian_slhd: 2,
+  penilaian_penghargaan: 3,
+  validasi_1: 4,
+  validasi_2: 5,
+  wawancara: 6,
+  selesai: 7,
+};
+
 // --- TYPES ---
 interface DashboardData {
     year: number;
@@ -306,7 +316,7 @@ function DeadlineCard({ deadline }: { deadline: DashboardData['deadline'] }) {
             <p className="text-2xl font-bold text-gray-900">{deadline.deadline_formatted}</p>
             {!deadline.is_passed ? (
                 <p className={`text-sm mt-1 ${variant === 'warning' ? 'text-yellow-700' : 'text-green-700'}`}>
-                    {deadline.days_remaining} hari lagi
+                    {Math.floor(deadline.days_remaining)} hari lagi
                 </p>
             ) : (
                 <p className="text-sm mt-1 text-red-700 font-medium">Deadline telah terlewat</p>
@@ -523,7 +533,7 @@ export default function DLHDashboardPage() {
                 <StatCard
                     title="Nilai SLHD"
                     value={data.rekap?.nilai_slhd != null ? Number(data.rekap.nilai_slhd).toFixed(2) : '-'}
-                    subtitle={data.rekap?.lolos_slhd ? 'Lolos' : data.rekap?.lolos_slhd === false ? 'Tidak Lolos' : 'Menunggu penilaian'}
+                    subtitle={data.rekap?.lolos_slhd ? 'Lolos' : data.rekap?.lolos_slhd === false && TAHAP_ORDER[data.tahapan.tahap_aktif] > TAHAP_ORDER['penilaian_slhd'] ? 'Tidak Lolos' : 'Menunggu penilaian'}
                     variant={data.rekap?.lolos_slhd ? 'success' : data.rekap?.lolos_slhd === false ? 'danger' : 'default'}
                 />
                 <StatCard
@@ -556,7 +566,7 @@ export default function DLHDashboardPage() {
                                 data.tahapan.tahap_aktif === 'penilaian_slhd' ? 'text-blue-600' :
                                 data.rekap.lolos_slhd ? 'text-green-600' : 'text-red-600'
                             }`}>
-                                {data.tahapan.tahap_aktif === 'penilaian_slhd' ? '⏳ Proses' :
+                                {TAHAP_ORDER[data.tahapan.tahap_aktif] < TAHAP_ORDER['penilaian_slhd'] ? '⏳ Proses' :
                                  data.rekap.lolos_slhd ? '✓ Lolos' : '✗ Tidak Lolos'}
                             </div>
                         </div>
@@ -565,14 +575,14 @@ export default function DLHDashboardPage() {
                         <div className="text-center p-4 bg-gray-50 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Penghargaan</div>
                             <div className="text-2xl font-bold text-gray-800">
-                                {data.rekap.nilai_penghargaan != null ? Number(data.rekap.nilai_penghargaan).toFixed(0) : '0'}
+                                {data.rekap.nilai_penghargaan != null ? Number(data.rekap.nilai_penghargaan).toFixed(0) : '-'}
                             </div>
                             <div className={`text-xs mt-1 ${
                                 data.tahapan.tahap_aktif === 'penilaian_penghargaan' ? 'text-blue-600' :
                                 data.rekap.masuk_penghargaan ? 'text-green-600' : 
                                 data.rekap.masuk_penghargaan === false ? 'text-red-600' : 'text-gray-400'
                             }`}>
-                                {data.tahapan.tahap_aktif === 'penilaian_penghargaan' ? '⏳ Proses' :
+                                {TAHAP_ORDER[data.tahapan.tahap_aktif] <= TAHAP_ORDER['penilaian_penghargaan'] ? '⏳ Proses' :
                                  data.rekap.masuk_penghargaan ? '✓ Masuk' : 
                                  data.rekap.masuk_penghargaan === false ? '✗ Tidak Masuk' : '-'}
                             </div>
@@ -616,19 +626,19 @@ export default function DLHDashboardPage() {
                         <div className="text-center p-4 bg-gray-50 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Wawancara</div>
                             <div className="text-2xl font-bold text-gray-800">
-                                {data.rekap.nilai_wawancara != null ? Number(data.rekap.nilai_wawancara).toFixed(0) : '0'}
+                                {data.rekap.nilai_wawancara != null ? Number(data.rekap.nilai_wawancara).toFixed(0) : '-'}
                             </div>
                             <div className={`text-xs mt-1 ${
                                 data.tahapan.tahap_aktif === 'wawancara' ? 'text-blue-600' :
                                 data.rekap.lolos_wawancara ? 'text-green-600' : 'text-gray-400'
                             }`}>
                                 {data.tahapan.tahap_aktif === 'wawancara' ? '⏳ Proses' :
-                                 data.rekap.lolos_wawancara ? '✓ Selesai' : 'Belum'}
+                                 data.rekap.lolos_wawancara ? '✓ Selesai' : 'Belum Dimulai'}
                             </div>
                         </div>
 
                         {/* Skor Final */}
-                        <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                        <div className="text-center p-4  bg-gray-50 rounded-lg  ">
                             <div className="text-xs text-green-600 mb-1">Skor Final</div>
                             <div className="text-2xl font-bold text-green-600">
                                 {data.rekap.total_skor_final != null ? Number(data.rekap.total_skor_final).toFixed(1) : '0'}
@@ -641,14 +651,45 @@ export default function DLHDashboardPage() {
                         {/* Status Akhir */}
                         <div className="text-center p-4 bg-gray-50 rounded-lg">
                             <div className="text-xs text-gray-500 mb-1">Status</div>
-                            <div className={`text-sm font-bold ${
+                            <div className={`text-xl font-bold ${
                                 (() => {
                                     // Mapping tahap_aktif dengan status_akhir
                                     const tahap = data.tahapan.tahap_aktif;
                                     const status = data.rekap.status_akhir;
                                     
                                     // Jika masih dalam proses tahap tertentu, tampilkan biru
-                                    if (['penilaian_slhd', 'penilaian_penghargaan', 'validasi1', 'validasi2', 'wawancara'].includes(tahap)) {
+                                    if (['submission', 'penilaian_slhd', 'penilaian_penghargaan', 'validasi_1', 'validasi_2', 'wawancara'].includes(tahap)) {
+                                        return 'text-blue-600';
+                                    }
+                                    
+                                    // Jika sudah selesai
+                                    
+                                    if (status?.startsWith('menunggu')) return 'text-blue-600';
+                                    if (status?.startsWith('lolos')) return 'text-green-600';
+                                    if (status?.startsWith('tidak')) return 'text-red-600';
+                                    
+                                    return 'text-gray-800';
+                                })()
+                            }`}>
+                                {(() => {
+                                    const tahap = data.tahapan.tahap_aktif;
+                                    const status = data.rekap.status_akhir;
+                                    
+                                    if (status) return status.replaceAll('_', ' ').toUpperCase();
+                                    return 'Menunggu penilaian';
+                                })()}
+                            </div>
+                        </div>
+                        {/* <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="text-xs text-gray-500 mb-1">Status</div>
+                            <div className={`text-xl font-bold ${
+                                (() => {
+                                    // Mapping tahap_aktif dengan status_akhir
+                                    const tahap = data.tahapan.tahap_aktif;
+                                    const status = data.rekap.status_akhir;
+                                    
+                                    // Jika masih dalam proses tahap tertentu, tampilkan biru
+                                    if (['submission', 'penilaian_slhd', 'penilaian_penghargaan', 'validasi_1', 'validasi_2', 'wawancara'].includes(tahap)) {
                                         return 'text-blue-600';
                                     }
                                     
@@ -664,11 +705,12 @@ export default function DLHDashboardPage() {
                                     const status = data.rekap.status_akhir;
                                     
                                     // Mapping status berdasarkan tahap aktif
-                                    if (tahap === 'penilaian_slhd') return '⏳ Penilaian SLHD';
-                                    if (tahap === 'penilaian_penghargaan') return '⏳ Penilaian Penghargaan';
-                                    if (tahap === 'validasi1') return '⏳ Validasi Tahap 1';
-                                    if (tahap === 'validasi2') return '⏳ Validasi Tahap 2';
-                                    if (tahap === 'wawancara') return '⏳ Wawancara';
+                                    if (tahap === 'submission') return ' Pengumpulan Dokumen';
+                                    if (tahap === 'penilaian_slhd') return ' Penilaian SLHD';
+                                    if (tahap === 'penilaian_penghargaan') return ' Penilaian Penghargaan';
+                                    if (tahap === 'validasi_1') return ' Validasi Tahap 1';
+                                    if (tahap === 'validasi_2') return ' Validasi Tahap 2';
+                                    if (tahap === 'wawancara') return ' Wawancara';
                                     
                                     // Jika sudah selesai semua tahap, tampilkan status final
                                     if (status === 'lolos_final') return '🏆 Lolos Final';
@@ -680,7 +722,7 @@ export default function DLHDashboardPage() {
                                     return 'Menunggu';
                                 })()}
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}

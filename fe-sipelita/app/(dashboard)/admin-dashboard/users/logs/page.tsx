@@ -185,14 +185,14 @@ export default function UsersLogsPage() {
 
       {/* Statistik */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {statsData.map((stat, index) => (
-          <StatCard
-            key={index}
-            title={stat.title}
-            value={stat.value ?? 0}
-            {...statCardColors[index]}
-          />
-        ))}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Total Semua Log</h3>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalLogs}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Log Aktivitas Pusdatin</h3>
+          <p className="text-3xl font-bold text-green-600">{stats.pusdatinLogs}</p>
+        </div>
       </div>
 
       {/* Log Table */}

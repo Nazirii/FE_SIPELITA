@@ -13,10 +13,12 @@ export interface SlhdData {
   tipologi: string;
   buku_1: string | null;
   buku_2: string | null;
+  buku_3: string | null;
   tabel_utama: string | null;
   // Status untuk tracking review
   buku_1_status?: 'draft' | 'finalized' | 'approved' | 'rejected';
   buku_2_status?: 'draft' | 'finalized' | 'approved' | 'rejected';
+  buku_3_status?: 'draft' | 'finalized' | 'approved' | 'rejected';
 }
 
 export interface IklhData {
@@ -61,7 +63,7 @@ export default function PenerimaanTable({
   const [previewModal, setPreviewModal] = useState<{
     isOpen: boolean;
     submissionId: number;
-    documentType: 'buku1' | 'buku2';
+    documentType: 'buku1' | 'buku2' | 'buku3';
   }>({
     isOpen: false,
     submissionId: 0,
@@ -91,7 +93,7 @@ export default function PenerimaanTable({
   };
 
   // Handler untuk membuka modal dokumen
-  const handleViewDocument = (item: SlhdData, documentType: 'buku1' | 'buku2') => {
+  const handleViewDocument = (item: SlhdData, documentType: 'buku1' | 'buku2' | 'buku3') => {
     console.log('View document:', documentType, item.kabkota, 'submission_id:', item.id);
     setPreviewModal({
       isOpen: true,
@@ -179,6 +181,12 @@ export default function PenerimaanTable({
           catatan_admin: null
         }));
       }
+      if (item.buku_3 && item.buku_3_status === 'finalized') {
+        promises.push(axios.post(`/api/pusdatin/review/submission/${item.id}/lampiran`, {
+          status: 'approved',
+          catatan_admin: null
+        }));
+      }
       await Promise.all(promises);
       onRefresh?.(); // Refresh data setelah action
     } catch (err) {
@@ -226,6 +234,12 @@ export default function PenerimaanTable({
           catatan_admin: rejectAllCatatan
         }));
       }
+      if (item.buku_3 && item.buku_3_status === 'finalized') {
+        promises.push(axios.post(`/api/pusdatin/review/submission/${item.id}/lampiran`, {
+          status: 'rejected',
+          catatan_admin: rejectAllCatatan
+        }));
+      }
       await Promise.all(promises);
       onRefresh?.(); // Refresh data setelah action
     } catch (err) {
@@ -260,6 +274,7 @@ export default function PenerimaanTable({
                     )}
                     <th className="py-4 px-4 text-center text-sm font-semibold text-gray-700">Buku I</th>
                     <th className="py-4 px-4 text-center text-sm font-semibold text-gray-700">Buku II</th>
+                    <th className="py-4 px-4 text-center text-sm font-semibold text-gray-700">Buku III</th>
                     <th className="py-4 px-4 text-center text-sm font-semibold text-gray-700">Tabel Utama</th>
                   </>
                 ) : (
@@ -292,6 +307,7 @@ export default function PenerimaanTable({
                         {currentPath === 'kab-kota' && (
                           <td className="py-4 px-4"><div className="h-4 bg-gray-200 animate-pulse rounded"></div></td>
                         )}
+                        <td className="py-4 px-4"><div className="h-4 bg-gray-200 animate-pulse rounded"></div></td>
                         <td className="py-4 px-4"><div className="h-4 bg-gray-200 animate-pulse rounded"></div></td>
                         <td className="py-4 px-4"><div className="h-4 bg-gray-200 animate-pulse rounded"></div></td>
                         <td className="py-4 px-4"><div className="h-4 bg-gray-200 animate-pulse rounded"></div></td>
@@ -411,6 +427,40 @@ export default function PenerimaanTable({
                             })()}
                           </td>
                           
+                          {/* BUKU 3 (LAMPIRAN) */}
+                          <td className="py-4 px-4 text-sm align-middle text-center">
+                            {(() => {
+                              const slhdItem = item as SlhdData;
+                              const status = slhdItem.buku_3_status;
+                              
+                              // Tidak ada file
+                              if (!slhdItem.buku_3) {
+                                return <span className="text-gray-400 text-sm">Belum Upload</span>;
+                              }
+                              
+                              // Determine color based on status
+                              let colorClass = 'text-gray-600 hover:text-gray-700'; // default
+                              
+                              if (status === 'approved') {
+                                colorClass = 'text-green-600 hover:text-green-700';
+                              } else if (status === 'rejected') {
+                                colorClass = 'text-red-500 hover:text-red-600';
+                              } else if (status === 'finalized') {
+                                colorClass = 'text-amber-500 hover:text-amber-600';
+                              }
+                              
+                              return (
+                                <button 
+                                  onClick={() => handleViewDocument(slhdItem, 'buku3')}
+                                  className={`${colorClass} hover:underline text-sm font-medium cursor-pointer`}
+                                  title={`Status: ${status || 'unknown'} - Lihat ${getTitle(slhdItem.buku_3)}`}
+                                >
+                                  {slhdItem.buku_3}
+                                </button>
+                              );
+                            })()}
+                          </td>
+                          
                           {/* TABEL UTAMA */}
                           <td className="py-4 px-4 text-sm align-middle text-center">
                             {(item as SlhdData).tabel_utama ? (
@@ -443,7 +493,7 @@ export default function PenerimaanTable({
                           <td className="py-4 px-2 text-sm text-center font-medium text-green-600 align-middle">
                             {(item as IklhData).ikl}
                           </td>
-                          <td className="py-4 px-2 text-sm text-center font-medium text-gray-400 align-middle">
+                          <td className="py-4 px-2 text-sm text-center font-medium text-green-600 align-middle">
                             {(item as IklhData).ik_pesisir !== null ? (item as IklhData).ik_pesisir : '-'}
                           </td>
                           <td className={`py-4 px-2 text-sm text-center font-medium ${
@@ -493,7 +543,7 @@ export default function PenerimaanTable({
               ) : (
                 <tr>
                   <td 
-                    colSpan={activeTab === 'SLHD' ? (currentPath === 'provinsi' ? 5 : 7) : (currentPath === 'provinsi' ? 9 : 10)} 
+                    colSpan={activeTab === 'SLHD' ? (currentPath === 'provinsi' ? 6 : 8) : (currentPath === 'provinsi' ? 9 : 10)} 
                     className="py-12 text-center text-gray-500"
                   >
                     <div className="flex flex-col items-center justify-center">

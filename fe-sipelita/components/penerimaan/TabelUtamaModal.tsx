@@ -11,9 +11,10 @@ const API_BASE_URL = 'http://localhost:8000';
 // Matra list sesuai backend MatraConstants
 const MATRA_LIST = [
   'Semua Matra',
-  'Jumlah Pemanfaatan Pelayanan Laboratorium',
-  'Daya Dukung dan Daya Tampung Lingkungan Hidup (D3TLH)',
-  'Kajian Lingkungan Hidup Strategis (KLHS)',
+  'Dokumen Non Matra',
+  // 'Jumlah Pemanfaatan Pelayanan Laboratorium',
+  // 'Daya Dukung dan Daya Tampung Lingkungan Hidup (D3TLH)',
+  // 'Kajian Lingkungan Hidup Strategis (KLHS)',
   'Keanekaragaman Hayati',
   'Kualitas Air',
   'Laut, Pesisir, dan Pantai',
@@ -22,7 +23,7 @@ const MATRA_LIST = [
   'Pengelolaan Sampah dan Limbah',
   'Perubahan Iklim',
   'Risiko Bencana',
-  'Penetapan Isu Prioritas',
+  // 'Penetapan Isu Prioritas',
 ];
 
 interface TabelItem {
@@ -162,61 +163,61 @@ export default function TabelUtamaModal({
         {/* Back button */}
         <button
           onClick={() => setSelectedTabel(null)}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 text-sm"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 text-sm"
         >
           ← Kembali ke daftar
         </button>
 
         {/* Detail content */}
-        <div className="bg-gray-700/50 rounded-xl p-6 space-y-4">
+        <div className="bg-white rounded-xl p-6 space-y-4 shadow-sm border border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <FiFileText className="w-6 h-6 text-green-400" />
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <FiFileText className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">{selectedTabel.kode_tabel}</h3>
-              <p className="text-sm text-gray-400">{selectedTabel.matra}</p>
+              <h3 className="text-lg font-semibold text-gray-900">{selectedTabel.kode_tabel}</h3>
+              <p className="text-sm text-gray-600">{selectedTabel.matra}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Nama File</p>
-              <p className="text-sm text-white flex items-center gap-2">
-                <FiFile className="text-gray-400" />
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Nama File</p>
+              <p className="text-sm text-gray-900 flex items-center gap-2">
+                <FiFile className="text-gray-500" />
                 {selectedTabel.nama_file}
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Ukuran File</p>
-              <p className="text-sm text-white flex items-center gap-2">
-                <FiHardDrive className="text-gray-400" />
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Ukuran File</p>
+              <p className="text-sm text-gray-900 flex items-center gap-2">
+                <FiHardDrive className="text-gray-500" />
                 {selectedTabel.ukuran_file || '-'}
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Format</p>
-              <p className="text-sm text-white">{selectedTabel.format_file}</p>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Format</p>
+              <p className="text-sm text-gray-900">{selectedTabel.format_file}</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Tanggal Upload</p>
-              <p className="text-sm text-white flex items-center gap-2">
-                <FiCalendar className="text-gray-400" />
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Tanggal Upload</p>
+              <p className="text-sm text-gray-900 flex items-center gap-2">
+                <FiCalendar className="text-gray-500" />
                 {formatDate(selectedTabel.tanggal_upload)}
               </p>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Status</p>
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1">Status</p>
             <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
               selectedTabel.status === 'approved' 
-                ? 'bg-green-500/20 text-green-400'
+                ? 'bg-green-100 text-green-700'
                 : selectedTabel.status === 'finalized'
-                ? 'bg-blue-500/20 text-blue-400'
+                ? 'bg-blue-100 text-blue-700'
                 : selectedTabel.status === 'rejected'
-                ? 'bg-red-500/20 text-red-400'
-                : 'bg-gray-500/20 text-gray-400'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-gray-100 text-gray-700'
             }`}>
               {selectedTabel.status === 'approved' ? 'Disetujui' 
                 : selectedTabel.status === 'finalized' ? 'Finalized'
@@ -226,9 +227,9 @@ export default function TabelUtamaModal({
           </div>
 
           {selectedTabel.catatan_admin && (
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">Catatan Admin</p>
-              <p className="text-sm text-white">{selectedTabel.catatan_admin}</p>
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Catatan Admin</p>
+              <p className="text-sm text-gray-900">{selectedTabel.catatan_admin}</p>
             </div>
           )}
 
@@ -249,12 +250,12 @@ export default function TabelUtamaModal({
   const renderListView = () => (
     <div className="space-y-4">
       {/* Filter dropdown */}
-      <div className="flex items-center gap-3">
-        <FiFilter className="text-gray-400" />
+      <div className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-200">
+        <FiFilter className="text-gray-600" />
         <select
           value={selectedMatra}
           onChange={(e) => setSelectedMatra(e.target.value)}
-          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
           {MATRA_LIST.map(matra => (
             <option key={matra} value={matra}>{matra}</option>
@@ -263,13 +264,13 @@ export default function TabelUtamaModal({
       </div>
 
       {/* Table list */}
-      <div className="bg-gray-700/50 rounded-xl overflow-hidden">
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-800/50">
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-300">Indikator</th>
-              <th className="text-center px-4 py-3 text-sm font-medium text-gray-300">Tanggal Upload</th>
-              <th className="text-center px-4 py-3 text-sm font-medium text-gray-300">Aksi</th>
+            <tr className="bg-green-100">
+              <th className="text-left px-4 py-3 text-sm font-semibold text-gray-800">Indikator</th>
+              <th className="text-center px-4 py-3 text-sm font-semibold text-gray-800">Tanggal Upload</th>
+              <th className="text-center px-4 py-3 text-sm font-semibold text-gray-800">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -277,29 +278,29 @@ export default function TabelUtamaModal({
               docs.map((doc, idx) => (
                 <tr 
                   key={doc.id} 
-                  className={`border-t border-gray-700/50 ${
+                  className={`border-t border-gray-200 hover:bg-gray-50 transition-colors ${
                     doc.status === 'draft' ? 'opacity-50' : ''
                   }`}
                 >
                   <td className="px-4 py-3">
                     <div>
-                      <p className="text-sm text-white">{doc.kode_tabel}</p>
-                      <p className="text-xs text-gray-400">{doc.matra}</p>
+                      <p className="text-sm text-gray-900 font-medium">{doc.kode_tabel}</p>
+                      <p className="text-xs text-gray-600">{doc.matra}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-300">
+                  <td className="px-4 py-3 text-center text-sm text-gray-700">
                     {formatDate(doc.tanggal_upload)}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {doc.status === 'finalized' || doc.status === 'approved' ? (
                       <button
                         onClick={() => setSelectedTabel(doc)}
-                        className="text-green-400 hover:text-green-300 text-sm font-medium"
+                        className="text-green-600 hover:text-green-700 text-sm font-medium"
                       >
                         Lihat Detail
                       </button>
                     ) : (
-                      <span className="text-gray-500 text-sm">-</span>
+                      <span className="text-gray-400 text-sm">-</span>
                     )}
                   </td>
                 </tr>
@@ -307,7 +308,7 @@ export default function TabelUtamaModal({
             ))}
             {filteredDocuments.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
                   {selectedMatra === 'Semua Matra' 
                     ? 'Belum ada tabel yang diupload'
                     : `Belum ada tabel untuk matra "${selectedMatra}"`
@@ -335,34 +336,34 @@ export default function TabelUtamaModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
+            className="bg-white rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-green-50">
               <div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-gray-900">
                   Detail Penerimaan Tabel Utama
                 </h2>
-                <p className="text-sm text-gray-400">{dinasName}</p>
+                <p className="text-sm text-gray-600">{dinasName}</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg hover:bg-white text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <FiX className="w-5 h-5" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-400">{error}</p>
+                  <p className="text-gray-600">{error}</p>
                 </div>
               ) : (
                 <AnimatePresence mode="wait">
@@ -373,9 +374,9 @@ export default function TabelUtamaModal({
 
             {/* Footer */}
             {data && !selectedTabel && (
-              <div className="px-6 py-4 border-t border-gray-700 bg-gray-800/50">
-                <p className="text-sm text-gray-400">
-                  Total: <span className="text-white font-medium">{data.total_tabel}</span> tabel diupload
+              <div className="px-6 py-4 border-t border-gray-200 bg-white">
+                <p className="text-sm text-gray-600">
+                  Total: <span className="text-gray-900 font-medium">{data.total_tabel}</span> tabel diupload
                 </p>
               </div>
             )}

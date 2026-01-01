@@ -163,7 +163,8 @@ function UploadModal({
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
+                {/* <div className="fixed inset-0  bg-opacity-75 bg-transparent transition-opacity" onClick={onClose}></div> */}
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
                 
                 <div className="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full">
                     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -457,14 +458,14 @@ export default function MatraDetailPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-600 font-medium">Total Tabel</p>
-                    <p className="text-2xl font-bold text-blue-800">{matraData.summary.total}</p>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+                <div className=" border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-600 font-medium">Total Tabel</p>
+                    <p className="text-2xl font-bold text-green-800">{matraData.summary.total}</p>
                 </div>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-600 font-medium">Sudah Upload</p>
-                    <p className="text-2xl font-bold text-yellow-800">{matraData.summary.uploaded}</p>
+                <div className=" border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-600 font-medium">Sudah Upload</p>
+                    <p className="text-2xl font-bold text-green-800">{matraData.summary.uploaded}</p>
                 </div>
             </div>
 
