@@ -68,11 +68,11 @@ export default function PenerimaanProvinsiPage() {
           tipologi: s.dinas?.tipologi || '-',
           buku_1: (s.buku_i && s.buku_i !== 'Belum Upload') ? 'Buku I' : null,
           buku_2: (s.buku_ii && s.buku_ii !== 'Belum Upload') ? 'Buku II' : null,
-          buku_3: (s.lampiran && s.lampiran !== 'Belum Upload') ? 'Buku III' : null,
+          buku_3: (s.buku_iii && s.buku_iii !== 'Belum Upload') ? 'Buku III' : null,
           tabel_utama: (s.tabel_utama && s.tabel_utama !== 'Belum Upload') ? 'Tabel Utama' : null,
           buku_1_status: s.buku_i,
           buku_2_status: s.buku_ii,
-          buku_3_status: s.lampiran,
+          buku_3_status: s.buku_iii,
         })));
         
         setTotalPages(res.data?.last_page || 1);
